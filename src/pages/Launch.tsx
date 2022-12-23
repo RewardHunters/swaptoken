@@ -49,6 +49,7 @@ export default function Launch() {
       quantity: 0,
     }
   );
+  const [loadingApprove, setLoadingApprove] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const tokenBUSD = "0xe9e7cea3dedca5984780bafc599bd69add087d56"; // 0xe9e7cea3dedca5984780bafc599bd69add087d56 Mainnet BUSD //Testnet: 0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee
@@ -114,18 +115,26 @@ export default function Launch() {
   };
 
   const approveBUSD = async () => {
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    provider.send("eth_requestAccounts", []);
-    const signer = provider.getSigner();
-    const BUSD = new ethers.Contract(tokenBUSD, SaleBUSD, signer);
-    const transation = await BUSD.approve(
-      tokenAddress,
-      "500000000000000000000"
-    );
+    try {
+      setLoadingApprove(true);
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      provider.send("eth_requestAccounts", []);
+      const signer = provider.getSigner();
+      const BUSD = new ethers.Contract(tokenBUSD, SaleBUSD, signer);
+      const transation = await BUSD.approve(
+        tokenAddress,
+        "500000000000000000000"
+      );
 
-    await transation.wait().then(() => {
-      setStatusConnect("Buy Token");
-    });
+      await transation.wait().then(() => {
+        setStatusConnect("Buy Token");
+      });
+
+      setLoadingApprove(false);
+    } catch (error) {
+      setLoadingApprove(false);
+    }
+
   };
 
 
@@ -242,7 +251,7 @@ export default function Launch() {
                 <div>
                   {statusConnect === "Approve" ? (
                     <div onClick={() => approveBUSD()} className="btn_paper">
-                      {statusConnect}
+                      {loadingApprove ? "Approving..." : statusConnect}
                     </div>
                   ) : (
                     <div onClick={() => buyToken()} className="btn_paper">
