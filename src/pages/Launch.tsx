@@ -120,9 +120,10 @@ export default function Launch() {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       provider.send("eth_requestAccounts", []);
       const signer = provider.getSigner();
+      const wallet = signer.getAddress();
       const BUSD = new ethers.Contract(tokenBUSD, SaleBUSD, signer);
       const transation = await BUSD.approve(
-        tokenAddress,
+        wallet,
         "500000000000000000000"
       );
 
@@ -148,7 +149,7 @@ export default function Launch() {
       const signer = provider.getSigner();
       const wallet = signer.getAddress();
       const BUSD = new ethers.Contract(tokenBUSD, SaleBUSD, signer);
-      const value = await BUSD.allowance(wallet, tokenAddress);
+      const value = await BUSD.allowance(wallet, tokenBUSD);
       console.log("value", value.toString());
       if (value.toString() >= "400000000000000000000") {
         setStatusConnect("Buy Token");
