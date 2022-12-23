@@ -227,7 +227,7 @@ export default function Launch() {
                     </div>
                     </div>
                     <label className="label_price">
-                            <span className="price_text">Price:</span> 0.00032 BUSD
+                            <span className="price_text">Price:</span> 0.0032 BUSD
                     </label>
                 </>
               
