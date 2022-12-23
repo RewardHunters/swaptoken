@@ -52,7 +52,7 @@ export default function Launch() {
   const [loading, setLoading] = useState(false);
 
   const tokenBUSD = "0xe9e7cea3dedca5984780bafc599bd69add087d56"; // 0xe9e7cea3dedca5984780bafc599bd69add087d56 Mainnet BUSD //Testnet: 0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee
-  const tokenAddress = "0xE24ef451b9053A3B03C9A1c57FD58FD5C5c8AdAd";
+  const tokenAddress = "0xb16b19872a83C11B49beCa7A02e156f49De0A9D2";
 
   function buttonClick() {
      const glider = document.getElementById('glider')
