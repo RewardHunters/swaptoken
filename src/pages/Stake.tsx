@@ -30,7 +30,7 @@ export default function Stake({ title, apr, staked, totalToStake, period, tvl }:
         </div>
         <div className="stake_inputs_section">
           <div className="stake_input">
-              <img width={24} className="icon" src="https://bscscan.com/token/images/rewardhunters_32.png?=v24"/>
+              <img width={24} className="icon" src="/logo.png"/>
               <input
                   className="input-field"
                   type="text"

@@ -49,7 +49,6 @@ export default function Launch() {
       quantity: 0,
     }
   );
-  const [loadingApprove, setLoadingApprove] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const tokenBUSD = "0xe9e7cea3dedca5984780bafc599bd69add087d56"; // 0xe9e7cea3dedca5984780bafc599bd69add087d56 Mainnet BUSD //Testnet: 0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee
@@ -115,27 +114,18 @@ export default function Launch() {
   };
 
   const approveBUSD = async () => {
-    try {
-      setLoadingApprove(true);
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       provider.send("eth_requestAccounts", []);
       const signer = provider.getSigner();
-      const wallet = signer.getAddress();
       const BUSD = new ethers.Contract(tokenBUSD, SaleBUSD, signer);
       const transation = await BUSD.approve(
-        wallet,
+        tokenAddress,
         "500000000000000000000"
       );
 
       await transation.wait().then(() => {
         setStatusConnect("Buy Token");
       });
-
-      setLoadingApprove(false);
-    } catch (error) {
-      setLoadingApprove(false);
-    }
-
   };
 
 
@@ -149,8 +139,7 @@ export default function Launch() {
       const signer = provider.getSigner();
       const wallet = signer.getAddress();
       const BUSD = new ethers.Contract(tokenBUSD, SaleBUSD, signer);
-      const value = await BUSD.allowance(wallet, tokenBUSD);
-      console.log("value", value.toString());
+      const value = await BUSD.allowance(wallet, tokenAddress);
       if (value.toString() >= "400000000000000000000") {
         setStatusConnect("Buy Token");
       } else {
@@ -221,7 +210,7 @@ export default function Launch() {
                     </div>
                     <div className="_input">
                     <div className="icon_label">
-                        <img width={24} src="https://bscscan.com/token/images/rewardhunters_32.png?=v24"/>
+                        <img width={24} src="/logo.png"/>
                         <div>$RHT</div>
                     </div>
                     <div className="staking_flip_card_back_form_input">
@@ -253,7 +242,7 @@ export default function Launch() {
                 <div>
                   {statusConnect === "Approve" ? (
                     <div onClick={() => approveBUSD()} className="btn_paper">
-                      {loadingApprove ? "Approving..." : statusConnect}
+                      {statusConnect}
                     </div>
                   ) : (
                     <div onClick={() => buyToken()} className="btn_paper">
