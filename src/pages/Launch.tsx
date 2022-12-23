@@ -120,7 +120,7 @@ export default function Launch() {
       const BUSD = new ethers.Contract(tokenBUSD, SaleBUSD, signer);
       const transation = await BUSD.approve(
         tokenAddress,
-        "500000000000000000000"
+        "5000000000000000000000"
       );
 
       await transation.wait().then(() => {
