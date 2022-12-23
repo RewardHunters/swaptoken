@@ -149,6 +149,7 @@ export default function Launch() {
       const wallet = signer.getAddress();
       const BUSD = new ethers.Contract(tokenBUSD, SaleBUSD, signer);
       const value = await BUSD.allowance(wallet, tokenAddress);
+      console.log("value", value);
       if (value.toString() >= "400000000000000000000") {
         setStatusConnect("Buy Token");
       } else {
