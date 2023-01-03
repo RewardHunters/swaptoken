@@ -50,40 +50,21 @@ export default function Launch() {
     }
   );
   const [loading, setLoading] = useState(false);
+  const [stakeContract, setStakeContract] = useState("0x184196BEcD947E96d64FEC37358F0B1Aa896B8f0");
 
   const tokenBUSD = "0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee"; // 0xe9e7cea3dedca5984780bafc599bd69add087d56 Mainnet BUSD //Testnet: 0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee
   const tokenAddress = "0xb16b19872a83C11B49beCa7A02e156f49De0A9D2";
 
-  function buttonClick() {
-     const glider = document.getElementById('glider')
-      const inputs = document.getElementsByClassName('input_stake')
-      let current = 0
+  function buttonClick(days:string) {
 
-      console.log(inputs.length);
-
-      for (let i = 0; i < inputs.length; i++) {
-        inputs[i].addEventListener('click', () => {
-          if (current === i) return
-          if (current < i) { // right
-            document.body.style.setProperty('--diff', (i - current + 1).toString());
-            document.body.style.setProperty('--right', `${200 * current}px`);
-            if(glider){
-              glider.style.animation = "right .5s cubic-bezier(0, 1.31, 1, 1.01)"
-            }
-          } else if (current > i) { // left
-            document.body.style.setProperty('--diff', (current - i + 1).toString());
-            if(glider){
-              glider.style.animation = "left 0.5s cubic-bezier(0, 1.31, 1, 1.01)"
-            }
-          }
-          setTimeout(() => {
-            if(glider){
-              glider.style.animation = ''
-            }
-          }, 500)
-          current = i
-        })
-      }
+    if(days == "30"){
+      setStakeContract("0x184196BEcD947E96d64FEC37358F0B1Aa896B8f0");
+    }else if(days == "60"){
+      setStakeContract("0x184196BEcD947E96d64FEC37358F0B1Aa896B8f0");
+    }else if(days  == "90"){
+      setStakeContract("0x184196BEcD947E96d64FEC37358F0B1Aa896B8f0");
+    }
+     
   }
 
   function disconnect() {
@@ -267,15 +248,15 @@ export default function Launch() {
             <div className="tabs">
               <input  type="radio" id="radio-1" className="input_stake" name="tabs" checked />
               <label onClick={()=>{
-                buttonClick();
+                buttonClick("30");
               }} className="tab" >1 Month</label>
               <input  type="radio" id="radio-2" className="input_stake" name="tabs" />
               <label onClick={()=>{
-                buttonClick();
+                buttonClick("60");
               }} className="tab" >2 Months</label>
               <input  type="radio" id="radio-3" className="input_stake" name="tabs" />
               <label onClick={()=>{
-                buttonClick();
+                buttonClick("90");
               }} className="tab">3 Months</label>
               <span id="glider" className="glider"></span>
             </div>
@@ -284,7 +265,7 @@ export default function Launch() {
         </div>
       </div>
       <section className="sectionb_stake Container_StakePage" id="sectionb_stake">
-        <StakePage statusConnect={statusConnect}/>
+        <StakePage stakeAddress={stakeContract} statusConnect={statusConnect}/>
       </section>
     </div>
   );

@@ -188,12 +188,12 @@ contract Staking is Ownable, ReentrancyGuard{
     // Endereço Owner
     address public wallet;
     // Porcentagem e Rendimento Stake
-    uint256 public simpleRHT = 500000;
-    uint256 public primeRHT = 5000000;
-    uint256 public legacyRHT = 5000000;
-    uint256 public maxSimpleRHT = 5000000;
-    uint256 public maxPrimeRHT = 50000000;
-    uint256 public maxLegacyRHT = 50000000;
+    uint256 public simpleRHT = 5000000000000000000;
+    uint256 public primeRHT = 5000000000000000000;
+    uint256 public legacyRHT = 5000000000000000000;
+    uint256 public maxSimpleRHT = 5000000000000000000000;
+    uint256 public maxPrimeRHT = 5000000000000000000000;
+    uint256 public maxLegacyRHT = 5000000000000000000000;
     uint256 public rewardsPerHour = 3600;
     uint256 public rewardsPercentSimpleStake = 20000;
     uint256 public rewardsPercentPrimeStake = 10000;
@@ -234,6 +234,7 @@ contract Staking is Ownable, ReentrancyGuard{
         uint256 percentReward;
         bool isStaking;
         uint256 endBLockStake;
+        uint256 totalStaked;
     }
 
     struct SimpleStake {
@@ -244,6 +245,7 @@ contract Staking is Ownable, ReentrancyGuard{
         uint256 percentReward;
         bool isStaking;
         uint256 endBLockStake;
+        uint256 totalStaked;
     }
 
     struct LegacyStake {
@@ -254,6 +256,7 @@ contract Staking is Ownable, ReentrancyGuard{
         uint256 percentReward;
         bool isStaking;
         uint256 endBLockStake;
+        uint256 totalStaked;
     }
 
     struct Balance {
@@ -421,9 +424,10 @@ contract Staking is Ownable, ReentrancyGuard{
     }
 
 
-    function setMaxStake(uint256 _simpleRHT, uint256 _primeRHT, uint256 _maxSimpleRHT, uint256 _maxPrimeRHT, uint256 _maxLegacyRHT) external onlyOwner {
+    function setMaxStake(uint256 _simpleRHT, uint256 _primeRHT, uint256 _legacyRHT, uint256 _maxSimpleRHT, uint256 _maxPrimeRHT, uint256 _maxLegacyRHT) external onlyOwner {
         simpleRHT = _simpleRHT ;
         primeRHT = _primeRHT;
+        legacyRHT = _legacyRHT;
         maxSimpleRHT = _maxSimpleRHT;
         maxPrimeRHT = _maxPrimeRHT;
         maxLegacyRHT = _maxLegacyRHT;
@@ -434,20 +438,22 @@ contract Staking is Ownable, ReentrancyGuard{
     }
     
     
-    function simpleStakeLaunch(uint256 _amount) external payable nonReentrant{
+    function simpleStakeLaunch(uint256 _amount) external payable nonReentrant returns(bool){
         if(isBNB) {
-        require(msg.value == priceBNBSimpleStake, "Must be identical to the set price");
-        _forwardFunds();
+            require(msg.value == priceBNBSimpleStake, "Must be identical to the set price");
+            _forwardFunds();
         }
         // Inicia o Stake do Usuario
         SimpleStake storage isUser = simpleStake[msg.sender];
-        require(_amount  > simpleRHT && _amount <= maxSimpleRHT, "Must be greater than the minimum and less than the maximum");
+
+        require(_amount  >= simpleRHT && _amount <= maxSimpleRHT, "Must be greater than the minimum and less than the maximum");
+
         if(isUser.initialBalance == 0) {
-        CounterBalance storage counters = counterBalance[address(this)];
-        counters.counterSimple += 1;
-        uint256 newUser = counters.counterSimple;
-        require(newUser <= simpleStakeLimit, "Holders limit reached");
-        isUser.startBlock = block.timestamp;
+            CounterBalance storage counters = counterBalance[address(this)];
+            counters.counterSimple += 1;
+            uint256 newUser = counters.counterSimple;
+            require(newUser <= simpleStakeLimit, "Holders limit reached");
+            isUser.startBlock = block.timestamp;
         }
         isUser.user = payable(msg.sender);
         // Atualiza o saldo do Contrato
@@ -458,25 +464,46 @@ contract Staking is Ownable, ReentrancyGuard{
         isUser.isStaking = true;
         isUser.endBLockStake = block.timestamp + endBLockStake;
         isUser.percentReward = rewardsPercentSimpleStake;
+
         if(isUser.initialBalance != 0) {
             isUser.rewardWithdraw = lastRewardUpdateSimpleStake(msg.sender);
         }
+
         isUser.initialBalance += _amount; 
+        isUser.totalStaked += _amount;
+        
         if(isUser.initialBalance > maxSimpleRHT) {
-        require(isUser.initialBalance <= maxSimpleRHT, "Stake Limit Reached");
+            require(isUser.initialBalance <= maxSimpleRHT, "Stake Limit Reached");
         }
+
+        return true;
+    }
+
+    function getStakedSimple (address _wallet) public view returns(uint256){
+        SimpleStake storage isUser = simpleStake[_wallet];
+        return isUser.totalStaked;
+    }
+
+    function getStakedPrime (address _wallet) public view returns(uint256){
+        PrimeStake storage isUser = primeStake[_wallet];
+        return isUser.totalStaked;
+    }
+
+    function getStakedLegacy (address _wallet) public view returns(uint256){
+        LegacyStake storage isUser = legacyStake[_wallet];
+        return isUser.totalStaked;
     }
 
 
 
-    function primeStakeLaunch(uint256 _amount) external payable nonReentrant{
+    function primeStakeLaunch(uint256 _amount) external payable nonReentrant returns(bool){
         if(isBNB) {
         require(msg.value == priceBNBPrimeStake, "Must be identical to the set price");
         _forwardFunds();
         }
         // Inicia o Stake do Usuario
         PrimeStake storage isUser = primeStake[msg.sender];
-        require(_amount > primeRHT && _amount <= maxPrimeRHT, "Must be greater than the minimum and less than the maximum");
+        require(_amount >= primeRHT && _amount <= maxPrimeRHT, "Must be greater than the minimum and less than the maximum");
 
         if(isUser.initialBalance == 0) {
         CounterBalance storage counters = counterBalance[address(this)];
@@ -500,16 +527,18 @@ contract Staking is Ownable, ReentrancyGuard{
         }
 
         isUser.initialBalance += _amount; 
+        isUser.totalStaked += _amount;
         if(isUser.initialBalance > maxPrimeRHT) {
          require(isUser.initialBalance <= maxPrimeRHT, "Stake Limit Reached");
         }
 
+        return true;
 
     }
 
 
 
-    function legacyStakeLaunch(uint256 _amount) external payable nonReentrant{
+    function legacyStakeLaunch(uint256 _amount) external payable nonReentrant returns(bool){
         require(whitelistedAddressesLegacy[msg.sender], "You need to be whitelisted");
 
         if(isBNB) {
@@ -518,7 +547,7 @@ contract Staking is Ownable, ReentrancyGuard{
         }
         // Inicia o Stake do Usuario
         LegacyStake storage isUser = legacyStake[msg.sender];
-        require(_amount > legacyRHT && _amount <= maxLegacyRHT, "Must be greater than the minimum and less than the maximum");
+        require(_amount >= legacyRHT && _amount <= maxLegacyRHT, "Must be greater than the minimum and less than the maximum");
 
         if(isUser.initialBalance == 0) {
         CounterBalance storage counters = counterBalance[address(this)];
@@ -542,10 +571,12 @@ contract Staking is Ownable, ReentrancyGuard{
         }
 
         isUser.initialBalance += _amount; 
+        isUser.totalStaked += _amount;
         if(isUser.initialBalance > maxLegacyRHT) {
          require(isUser.initialBalance <= maxLegacyRHT, "Stake Limit Reached");
         }
 
+        return true;
 
     }
     // Retira os Tokens Aportados

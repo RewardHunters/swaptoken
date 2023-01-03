@@ -6,7 +6,7 @@ import { StakeABI } from "./Contracts/StakeABI";
 import { RHTABI } from "./Contracts/RHTABI";
 import Swal from 'sweetalert2';
 
-export default function StakePage({statusConnect}:{statusConnect: string;}) {
+export default function StakePage({statusConnect, stakeAddress}:{statusConnect: string; stakeAddress: string;}) {
   const [StakedSimple, setStakedSimple] = useState("");
   const [AvaliableSimple, setAvaliableSimple] = useState(600);
   const [maxSimpleStake, setMaxSimpleStake] = useState(0);
@@ -23,12 +23,20 @@ export default function StakePage({statusConnect}:{statusConnect: string;}) {
   const [AvaliableLegacy, setAvaliableLegacy] = useState(300);
   const [amountLegacy, setAmountLegacy] = useState(0);
   const [maxLegacyStake, setMaxLegacyStake] = useState(0);
+  const [activeBNB, setActiveBNB] = useState(false);
 
 
   const [approved, setApproved] = useState(false);
   const [loadingApproving, setLoadingApproving] = useState(false);
 
-  const stakeAddress = "0x184196BEcD947E96d64FEC37358F0B1Aa896B8f0";
+  const [simplePricesBnb, setSimplePricesBnb] = useState(0);
+  const [primePricesBnb, setPrimePricesBnb] = useState(0);
+  const [legacyPricesBnb, setLegacyPricesBnb] = useState(0);
+
+  const [userSimpleInStaked, setUserSimpleInStaked] = useState(false);
+  const [userPrimeInStaked, setUserPrimeInStaked] = useState(false);
+  const [userLegacyInStaked, setUserLegacyInStaked] = useState(false);
+
   const RHTToken = "0xC315a7E34572A9C3858428187aB10813Ac3420C8";
 
   useEffect(() => {
@@ -56,6 +64,17 @@ export default function StakePage({statusConnect}:{statusConnect: string;}) {
 
     const maxStake = await stake.maxSimpleRHT();
     setMaxSimpleStake(parseInt(maxStake));
+
+    const bnb = await stake.priceBNBSimpleStake();
+    setSimplePricesBnb(bnb);
+
+    const isBnb = await stake.isBNB();
+    setActiveBNB(isBnb);
+
+    
+    const userInStake = await stake.verifySimpleStake(wallet);
+
+    setUserSimpleInStaked(userInStake);
   };
 
   const getAmountStakedPrime = async () => {
@@ -75,6 +94,13 @@ export default function StakePage({statusConnect}:{statusConnect: string;}) {
 
     const maxStake = await stake.maxPrimeRHT();
     setMaxPrimeStake(parseInt(maxStake));
+    const bnb = await stake.priceBNBPrimeStake();
+    setPrimePricesBnb(bnb);
+
+
+    const userInStake = await stake.verifyPrimeStake(wallet);
+
+    setUserPrimeInStaked(userInStake);
   };
 
   const getAmountStakedLegacy = async () => {
@@ -94,6 +120,12 @@ export default function StakePage({statusConnect}:{statusConnect: string;}) {
 
     const maxStake = await stake.maxLegacyRHT();
     setMaxLegacyStake(parseInt(maxStake));
+    const bnb = await stake.priceBNBLegacyStake();
+    setLegacyPricesBnb(bnb);
+
+    const userInStake = await stake.verifyLegacyStake(wallet);
+
+    setUserLegacyInStaked(userInStake);
   };
 
   const approveToken = async () => {
@@ -149,13 +181,22 @@ export default function StakePage({statusConnect}:{statusConnect: string;}) {
   const signer = provider.getSigner();
   const stakeContract = new ethers.Contract(stakeAddress, StakeABI, signer);
 
-  console.log("value", value);
-
-  const valueInWei = ethers.utils.parseEther((value).toString());;
-
-  console.log("valueInWei", valueInWei.toString());
+  const valueInWei = ethers.utils.parseEther((value).toString());
 
   let tx;
+
+  let amountBnb = 0;
+
+  if(activeBNB){
+     if(option == "simpleStakeLaunch"){
+      amountBnb = simplePricesBnb;
+    }else if(option == "primeStakeLaunch"){
+      amountBnb = primePricesBnb;
+    }else if(option == "legacyStakeLaunch"){
+      amountBnb = legacyPricesBnb;
+    }
+  }
+ 
 
   Swal.fire({
     title: 'Please wait...',
@@ -166,7 +207,7 @@ export default function StakePage({statusConnect}:{statusConnect: string;}) {
   });
 
   try {
-    tx = await stakeContract[option](valueInWei);
+    tx = await stakeContract[option](valueInWei, {value: amountBnb});
   } catch (error:any) {
     console.log(error);
 
@@ -194,6 +235,8 @@ export default function StakePage({statusConnect}:{statusConnect: string;}) {
         <Stake
           amountToStake={amountSimple}
           loadingApproving={loadingApproving}
+          rewards="0"
+          inStake={userSimpleInStaked}
           approve={() => {
             approveToken();
           }}
@@ -217,6 +260,8 @@ export default function StakePage({statusConnect}:{statusConnect: string;}) {
         <Stake
           amountToStake={amountPrime}
           loadingApproving={loadingApproving}
+          rewards="0"
+          inStake={userPrimeInStaked}
           approve={() => {
             approveToken();
           }}
@@ -238,6 +283,8 @@ export default function StakePage({statusConnect}:{statusConnect: string;}) {
         <Stake
           amountToStake={amountLegacy}
           loadingApproving={loadingApproving}
+          rewards="0"
+          inStake={userLegacyInStaked}
           approve={() => {
             approveToken();
           }}

@@ -4,6 +4,8 @@ import "./Style.scss";
 export default function Stake({
   approve,
   title,
+  inStake,
+  rewards,
   apr,
   staked,
   totalToStake,
@@ -19,6 +21,7 @@ export default function Stake({
   approve: Function;
   tvl: string;
   title: string;
+  rewards: string;
   apr: string;
   staked: string;
   totalToStake: number;
@@ -28,6 +31,7 @@ export default function Stake({
   onChange: Function;
   startStake: Function;
   approved: boolean;
+  inStake: boolean;
   loadingApproving: boolean;
 }) {
 
@@ -84,16 +88,23 @@ export default function Stake({
             {approved ? "Stake" : loadingApproving ? "Approving..." : "Approve"}
           </div>
 
+          <div
+            onClick={() => { }}
+            className="btn_paper rewardis-disabled"
+          >
+            Withdraw Rewards
+          </div>
+
           <div className="stake_infos_card">
             <span className="title">Period</span>
             <span className="value">{period}</span>
           </div>
           <div className="stake_infos_card">
-            <span className="title">TVL</span>
-            <span className="value">{tvl}</span>
+            <span className="title">REWARDS</span>
+            <span className="value">{rewards} $RHT</span>
           </div>
         </div>
       </aside>
     </div>
-  );
+  )
 }
