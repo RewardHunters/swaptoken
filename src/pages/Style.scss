@@ -1472,8 +1472,36 @@ input[id="radio-3"] {
     }
     .disconnect_btn {
         position: absolute;
-        right: 0px;
-        transform: scale(0.7);
+        visibility: hidden;
+    }
+    .disconnect_btn::after {
+        content: "✘";
+        position: absolute;
+        visibility: visible;
+        display: grid;
+        text-decoration: none;
+        border: 2px solid #7fca2a ;
+        background-color: #7fca2a ;
+        color: #ffffff !important;
+        padding: 0.6rem 1.2rem;
+        border-radius: 4px;
+        border-radius: 0.3em;
+        transition: all 1s;
+        align-content: center;
+        justify-items: center;
+        font-family: 'Montserrat', sans-serif !important;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        font-weight: 600;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        overflow: hidden;
+        cursor: pointer;
+        right: 0;
+        &:hover {
+            color: #ffffff;
+            background-color: transparent;
+        }
     }
     .navbar-container{
         transform: scale(0.7);
