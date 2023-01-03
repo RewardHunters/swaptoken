@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 import { SaleBUSD } from "./Contracts/BUSD";
 import { CrowdSale } from "./Contracts/CrowdSale";
 import "./Style.scss";
-import Stake from "./Stake";
+import StakePage from "./StakePage";
 
 type State = {
   valueToken: number;
@@ -51,7 +51,7 @@ export default function Launch() {
   );
   const [loading, setLoading] = useState(false);
 
-  const tokenBUSD = "0xe9e7cea3dedca5984780bafc599bd69add087d56"; // 0xe9e7cea3dedca5984780bafc599bd69add087d56 Mainnet BUSD //Testnet: 0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee
+  const tokenBUSD = "0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee"; // 0xe9e7cea3dedca5984780bafc599bd69add087d56 Mainnet BUSD //Testnet: 0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee
   const tokenAddress = "0xb16b19872a83C11B49beCa7A02e156f49De0A9D2";
 
   function buttonClick() {
@@ -131,6 +131,7 @@ export default function Launch() {
 
 
   useMemo(async () => {
+
     if (nullAccount === null) {
       setStatusConnect("Connect");
     } else if (nullAccount !== null) {
@@ -140,6 +141,8 @@ export default function Launch() {
       const wallet = signer.getAddress();
       const BUSD = new ethers.Contract(tokenBUSD, SaleBUSD, signer);
       const value = await BUSD.allowance(wallet, tokenAddress);
+
+          console.log("nullAccount", nullAccount);
       if (value.toString() >= "400000000000000000000") {
         setStatusConnect("Buy Token");
       } else {
@@ -280,10 +283,8 @@ export default function Launch() {
 
         </div>
       </div>
-      <section className="sectionb_stake" id="sectionb_stake">
-        <Stake title="Stake Classic" apr="16%" staked="0" totalToStake="0" period="1 month" tvl=""/>
-        <Stake title="Stake Premium" apr="48%" staked="0" totalToStake="0" period="1 month" tvl=""/>
-        <Stake title="Stake Legacy" apr="56%" staked="0" totalToStake="0" period="1 month" tvl=""/>
+      <section className="sectionb_stake Container_StakePage" id="sectionb_stake">
+        <StakePage statusConnect={statusConnect}/>
       </section>
     </div>
   );
