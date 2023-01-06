@@ -3,11 +3,13 @@ import "./Style.scss";
 
 export default function Stake({
   approve,
+  withdraw,
   title,
   inStake,
   rewards,
   apr,
   staked,
+  timing,
   totalToStake,
   period,
   tvl,
@@ -16,14 +18,17 @@ export default function Stake({
   onChange,
   startStake,
   approved,
+  canWithdraw,
   loadingApproving,
 }: {
   approve: Function;
+  withdraw: Function;
   tvl: string;
   title: string;
   rewards: string;
   apr: string;
   staked: string;
+  timing: string;
   totalToStake: number;
   period: string;
   setAmountToMax: Function;
@@ -31,11 +36,11 @@ export default function Stake({
   onChange: Function;
   startStake: Function;
   approved: boolean;
+  canWithdraw: boolean;
   inStake: boolean;
   loadingApproving: boolean;
 }) {
 
-  console.log("approved", approved);
   return (
     <div className="container_stake">
       <aside>
@@ -52,7 +57,7 @@ export default function Stake({
         <div className="section_stake">
           <div className="stake_infos">
             <span className="title">Staked Amount</span>
-            <span className="value">{staked} $RHT</span>
+            <span className="value">$RHT {staked}</span>
           </div>
           <div className="stake_infos">
             <span className="title">APR</span>
@@ -89,19 +94,27 @@ export default function Stake({
           </div>
 
           <div
-            onClick={() => { }}
-            className="btn_paper rewardis-disabled"
+            onClick={() => { withdraw() }}
+            className={`btn_paper ${canWithdraw ? "" : "rewardis-disabled"}`}
           >
-            Withdraw Rewards
+            Withdraw Rewards {canWithdraw ? "(Available)" : ""}
           </div>
 
+          <div className="stake_infos_card">
+            <span className="title">REWARDS</span>
+            <span className="value">{rewards} $RHT</span>
+          </div>
           <div className="stake_infos_card">
             <span className="title">Period</span>
             <span className="value">{period}</span>
           </div>
           <div className="stake_infos_card">
-            <span className="title">REWARDS</span>
-            <span className="value">{rewards} $RHT</span>
+            <span className="title">TVL</span>
+            <span className="value">$RHT {tvl}</span>
+          </div>
+          <div className="stake_infos_card">
+            <span className="title">Time in Stake</span>
+            <span className="value">{timing}</span>
           </div>
         </div>
       </aside>

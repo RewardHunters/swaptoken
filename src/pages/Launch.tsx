@@ -50,7 +50,11 @@ export default function Launch() {
     }
   );
   const [loading, setLoading] = useState(false);
-  const [stakeContract, setStakeContract] = useState("0x184196BEcD947E96d64FEC37358F0B1Aa896B8f0");
+  const [stakeContract, setStakeContract] = useState("0xdDd9D9155582ABbCe018E831bf3e8D8f50ac382f");
+  const [aprStakeSimple, setAprStakeSimple] = useState("8%");
+  const [aprStakePrime, setAprStakePrime] = useState("12%");
+  const [aprStakeLegacy, setAprStakeLegacy] = useState("14%");
+  const [currentMonth, setcurrentMonth] = useState("30");
 
   const tokenBUSD = "0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee"; // 0xe9e7cea3dedca5984780bafc599bd69add087d56 Mainnet BUSD //Testnet: 0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee
   const tokenAddress = "0xb16b19872a83C11B49beCa7A02e156f49De0A9D2";
@@ -58,11 +62,23 @@ export default function Launch() {
   function buttonClick(days:string) {
 
     if(days == "30"){
-      setStakeContract("0x184196BEcD947E96d64FEC37358F0B1Aa896B8f0");
+      setStakeContract("0xdDd9D9155582ABbCe018E831bf3e8D8f50ac382f");
+      setAprStakeSimple("8%");
+      setAprStakePrime("12%");
+      setAprStakeLegacy("14%");
+      setcurrentMonth("30");
     }else if(days == "60"){
-      setStakeContract("0x184196BEcD947E96d64FEC37358F0B1Aa896B8f0");
+      setStakeContract("0x30Dc268513021555225f8f5871212ffc8660b671");
+      setAprStakeSimple("14%");
+      setAprStakePrime("15%");
+      setAprStakeLegacy("16%");
+      setcurrentMonth("60")
     }else if(days  == "90"){
-      setStakeContract("0x184196BEcD947E96d64FEC37358F0B1Aa896B8f0");
+      setStakeContract("0xd02c4ab3ECfA8f266936D74aa42472b73a8a931C");
+      setAprStakeSimple("14%");
+      setAprStakePrime("15%");
+      setAprStakeLegacy("18%");
+      setcurrentMonth("90");
     }
      
   }
@@ -140,6 +156,7 @@ export default function Launch() {
     await crowd.buyToken(ethers.utils.parseEther(valueToken));
   };
 
+  console.log("currentMonth", currentMonth);
   return (
     <div id="Container">
        <nav className="navbar">
@@ -249,23 +266,22 @@ export default function Launch() {
               <input  type="radio" id="radio-1" className="input_stake" name="tabs" checked />
               <label onClick={()=>{
                 buttonClick("30");
-              }} className="tab" >1 Month</label>
+              }} className={`tab ${currentMonth == "30" ? "glider" : ""}`} >1 Month</label>
               <input  type="radio" id="radio-2" className="input_stake" name="tabs" />
               <label onClick={()=>{
                 buttonClick("60");
-              }} className="tab" >2 Months</label>
+              }} className={`tab ${currentMonth == "60" ? "glider" : ""}`} >2 Months</label>
               <input  type="radio" id="radio-3" className="input_stake" name="tabs" />
               <label onClick={()=>{
                 buttonClick("90");
-              }} className="tab">3 Months</label>
-              <span id="glider" className="glider"></span>
+              }} className={`tab ${currentMonth == "90" ? "glider" : ""}`}>3 Months</label>
             </div>
           </div>
 
         </div>
       </div>
       <section className="sectionb_stake Container_StakePage" id="sectionb_stake">
-        <StakePage stakeAddress={stakeContract} statusConnect={statusConnect}/>
+        <StakePage aprStakeSimple={aprStakeSimple} aprStakePrime={aprStakePrime} aprStakeLegacy={aprStakeLegacy} stakeAddress={stakeContract} statusConnect={statusConnect}/>
       </section>
     </div>
   );

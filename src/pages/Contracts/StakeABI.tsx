@@ -173,6 +173,63 @@ export const StakeABI = [
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_wallet",
+				"type": "address"
+			}
+		],
+		"name": "getStakedLegacy",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_wallet",
+				"type": "address"
+			}
+		],
+		"name": "getStakedPrime",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_wallet",
+				"type": "address"
+			}
+		],
+		"name": "getStakedSimple",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "isBNB",
 		"outputs": [
@@ -325,6 +382,11 @@ export const StakeABI = [
 				"internalType": "uint256",
 				"name": "endBLockStake",
 				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "totalStaked",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -339,7 +401,13 @@ export const StakeABI = [
 			}
 		],
 		"name": "legacyStakeLaunch",
-		"outputs": [],
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
 		"stateMutability": "payable",
 		"type": "function"
 	},
@@ -504,6 +572,11 @@ export const StakeABI = [
 				"internalType": "uint256",
 				"name": "endBLockStake",
 				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "totalStaked",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -518,7 +591,13 @@ export const StakeABI = [
 			}
 		],
 		"name": "primeStakeLaunch",
-		"outputs": [],
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
 		"stateMutability": "payable",
 		"type": "function"
 	},
@@ -922,6 +1001,11 @@ export const StakeABI = [
 				"internalType": "uint256",
 				"name": "endBLockStake",
 				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "totalStaked",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -936,7 +1020,13 @@ export const StakeABI = [
 			}
 		],
 		"name": "simpleStakeLaunch",
-		"outputs": [],
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
 		"stateMutability": "payable",
 		"type": "function"
 	},
@@ -974,6 +1064,45 @@ export const StakeABI = [
 				"internalType": "contract IBEP20",
 				"name": "",
 				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "totalLegacyStaked",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "totalPrimeStaked",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "totalSimpleStaked",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -1071,6 +1200,63 @@ export const StakeABI = [
 	{
 		"inputs": [
 			{
+				"internalType": "address",
+				"name": "sender",
+				"type": "address"
+			}
+		],
+		"name": "verifyVestingTimeLegacy",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "blockTime",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "sender",
+				"type": "address"
+			}
+		],
+		"name": "verifyVestingTimePrime",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "blockTime",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "sender",
+				"type": "address"
+			}
+		],
+		"name": "verifyVestingTimeSimple",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "blockTime",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "uint256",
 				"name": "timeBlocked",
 				"type": "uint256"
@@ -1158,4 +1344,3 @@ export const StakeABI = [
 		"type": "receive"
 	}
 ]
-	
