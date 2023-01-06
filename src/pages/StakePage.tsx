@@ -532,7 +532,7 @@ async function withdrawStakeRewards(
             }
           }}
           startStake={()=>{
-            stake("simpleStakeLaunch", amountSimple);
+            stake("primeStakeLaunch", amountPrime);
           }}
           approved={approved}
           onChange={(e:number) => {setAmountPrime(e)}}
@@ -562,7 +562,7 @@ async function withdrawStakeRewards(
             }
           }}
           startStake={()=>{
-            stake("simpleStakeLaunch", amountSimple);
+            stake("legacyStakeLaunch", amountLegacy);
           }}
           approved={approved}
           onChange={(e:number) => {setAmountLegacy(e)}}

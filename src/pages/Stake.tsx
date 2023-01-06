@@ -102,7 +102,7 @@ export default function Stake({
 
           <div className="stake_infos_card">
             <span className="title">REWARDS</span>
-            <span className="value">{rewards} $RHT</span>
+            <span className="value">$RHT {rewards}</span>
           </div>
           <div className="stake_infos_card">
             <span className="title">Period</span>
