@@ -8,52 +8,36 @@ import Swal from 'sweetalert2';
 
 type StakeType = "simple" | "prime" | "legacy";
 
-export default function StakePage({statusConnect, stakeAddress, aprStakeSimple, aprStakePrime, aprStakeLegacy}:{statusConnect: string; stakeAddress: string; aprStakeSimple: string; aprStakePrime: string; aprStakeLegacy: string;}) {
-  const [StakedSimple, setStakedSimple] = useState("");
-  const [AvaliableSimple, setAvaliableSimple] = useState(0);
-  const [maxSimpleStake, setMaxSimpleStake] = useState(0);
-  const [amountSimple, setAmountSimple] = useState(0);
+export default function StakePage({statusConnect, stakeAddress, type, period}:{statusConnect: string; stakeAddress: string, type: string, period: string}) {
 
 
-  const [StakedPrime, setStakedPrime] = useState("");
-  const [AvaliablePrime, setAvaliablePrime] = useState(300);
-  const [amountPrime, setAmountPrime] = useState(0);
-  const [maxPrimeStake, setMaxPrimeStake] = useState(0);
-
-
-  const [StakedLegacy, setStakedLegacy] = useState("");
-  const [AvaliableLegacy, setAvaliableLegacy] = useState(300);
-  const [amountLegacy, setAmountLegacy] = useState(0);
-  const [maxLegacyStake, setMaxLegacyStake] = useState(0);
-  const [activeBNB, setActiveBNB] = useState(false);
-
+  const [Staked, setStaked] = useState("");
+  const [avaliableStake, setAvaliableStake] = useState(300);
+  const [amountStake, setAmountStake] = useState(0);
+  const [maxStake, setMaxStake] = useState(0);
 
   const [approved, setApproved] = useState(false);
   const [loadingApproving, setLoadingApproving] = useState(false);
 
-  const [simplePricesBnb, setSimplePricesBnb] = useState(0);
-  const [primePricesBnb, setPrimePricesBnb] = useState(0);
-  const [legacyPricesBnb, setLegacyPricesBnb] = useState(0);
+  const [pricesBnb, setPricesBnb] = useState(0);
+  const [activeBNB, setActiveBNB] = useState(0);
 
-  const [userSimpleInStaked, setUserSimpleInStaked] = useState(false);
-  const [userPrimeInStaked, setUserPrimeInStaked] = useState(false);
-  const [userLegacyInStaked, setUserLegacyInStaked] = useState(false);
+  const [userInStake, setUserInStake] = useState(false);
 
-  const [rewardsSimple, setRewardsSimple] = useState("0");
-  const [rewardsPrime, setRewardsPrime] = useState("0");
+  const [whitelisted, setWhitelisted] = useState(false);
+  const [whitelist, setWhitelist] = useState(false);
+
   const [rewardsLegacy, setRewardsLegacy] = useState("0");
 
-  const [timingSimpleReward, setTimingSimpleReward] = useState("");
-  const [timingPrimeReward, setTimingPrimeReward] = useState("");
   const [timingLegacyReward, setTimingLegacyReward] = useState("");
 
-  const [verifyVestingSimple, setVerifyVestingSimple] = useState(false);
-  const [verifyVestingPrime, setVerifyVestingPrime] = useState(false);
-  const [verifyVestingLegacy, setVerifyVestingLegacy] = useState(false);
+  const [canWithdraw, setCanWithdraw] = useState(false);
   
-  const [tvlSimple, setTvlSimple] = useState("0");
-  const [tvlPrime, setTvlPrime] = useState("0");
   const [tvlLegacy, setTvlLegacy] = useState("0");
+
+  const [currentAPR, setCurrentAPR] = useState("");
+
+  const [balanceRHT, setBalanceRHT] = useState(0);
 
   const RHTToken = "0xC315a7E34572A9C3858428187aB10813Ac3420C8";
 
@@ -62,28 +46,14 @@ export default function StakePage({statusConnect, stakeAddress, aprStakeSimple, 
 
     verifyApprove();
 
-    //Simple
-    getAmountStakedSimple();
-    getAvaliableSimple();
-    infosStakeSimple();
-    timeStakedSimple();
-
-
-    //Prime
-       
-    getAmountStakedPrime();
-    getAvaliablePrime();
-    infosStakePrime();
-    timeStakedPrime();
-
 
     //Legacy
-    getAmountStakedLegacy();
-    getAvaliableLegacy();
-    infosStakeLegacy();
-    timeStakedLegacy();
+    getAmountStaked();
+    getAvaliable();
+    infosStake();
+    timeStaked();
+    getBalanceRHT();
 
-    // getAllTvl();
   }, [stakeAddress]);
   
 
@@ -95,76 +65,6 @@ export default function StakePage({statusConnect, stakeAddress, aprStakeSimple, 
   const wallet = signer.getAddress();
   const stakeContract = new ethers.Contract(stakeAddress, StakeABI, signer);
 
-  //functions simple
-  const getAmountStakedSimple = async () => {
-
-
-    const valueStaked = await stakeContract.getStakedSimple(wallet);
-    let convertValue = parseInt(valueStaked) / 10 ** 18;
-    setStakedSimple(convertValue.toString());
-    
-    const userInStake = await stakeContract.verifySimpleStake(wallet);
-
-    setUserSimpleInStaked(userInStake);
-
-   
-
-  };
-
-  async function getAllTvl() {
-    const simpleTvl = await stakeContract.totalSimpleStaked();
-    setTvlSimple((parseInt(simpleTvl) / 10 ** 18).toString());
-
-    const primeTvl = await stakeContract.totalPrimeStaked();
-    setTvlPrime((parseInt(primeTvl) / 10 ** 18).toString());
-    
-    const legacyTvl = await stakeContract.totalLegacyStaked();
-    setTvlLegacy((parseInt(legacyTvl) / 10 ** 18).toString());
-  }
-
-  async function getAvaliableSimple() {
-    const countersBalanace = await stakeContract.counterBalance(stakeAddress);
-    const simpleStakeLimit = await stakeContract.simpleStakeLimit();
-    let totalAvaliable = parseInt(simpleStakeLimit) - parseInt(countersBalanace.counterSimple);
-    setAvaliableSimple(totalAvaliable);
-  }
-
-  async function infosStakeSimple() {
-
-    const maxStake = await stakeContract.maxSimpleRHT();
-    setMaxSimpleStake(parseInt(maxStake));
-
-    const bnb = await stakeContract.priceBNBSimpleStake();
-    setSimplePricesBnb(parseInt(bnb));
-
-    const isBnb = await stakeContract.isBNB();
-    setActiveBNB(isBnb);
-  }
-
-  async function timeStakedSimple() {
-    
-    const reward = await stakeContract.lastRewardUpdateSimpleStake(wallet);
-
-    setRewardsSimple((reward / 10 ** 18).toFixed(2).toString());
-
-    const inStakeTime = await stakeContract.verifyVestingTimeSimple(wallet);
-    let canWithdraw = parseInt(inStakeTime) <= 0 ? false : true;
-
-    setVerifyVestingSimple(canWithdraw);
-
-
-    const start = await stakeContract.simpleStake(wallet);
-
-    if(parseInt(start.startBlock))
-     updateTimer(parseInt(start.startBlock), (value: string)=>{
-      setTimingSimpleReward(value);
-     });
-  }
-
-
-  //end functions simple
-
-  
 
 
   function updateTimer(startTimestamp: number, cb: Function) {
@@ -190,123 +90,84 @@ export default function StakePage({statusConnect, stakeAddress, aprStakeSimple, 
     }, 1000);
   }
 
-  //Functions Prime
+ 
+  const getBalanceRHT = async () => {
+    const RHTContract = new ethers.Contract(RHTToken, RHTABI, signer);
 
-  const getAmountStakedPrime = async () => {
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = provider.getSigner();
-    const wallet = signer.getAddress();
+    const balance = await RHTContract.balanceOf(wallet);
 
-    const stake = new ethers.Contract(stakeAddress, StakeABI, signer);
-    const valueStaked = await stake.getStakedPrime(wallet);
-    let convertValue = parseInt(valueStaked) / 10 ** 18;
-    setStakedPrime(convertValue.toString());
-
-
-    const userInStake = await stake.verifyPrimeStake(wallet);
-
-    setUserPrimeInStaked(userInStake);
-  };
-
-  async function getAvaliablePrime() {
-    const countersBalanace = await stakeContract.counterBalance(stakeAddress);
-    const primeStakeLimit = await stakeContract.primeStakeLimit();
-    let totalAvaliable = parseInt(primeStakeLimit) - parseInt(countersBalanace.counterPrime);
-    setAvaliablePrime(totalAvaliable);
+    setBalanceRHT(parseInt(balance) / 10 ** 18);
   }
-
-  async function infosStakePrime() {
-
-    const maxStake = await stakeContract.maxPrimeRHT();
-    setMaxPrimeStake(parseInt(maxStake));
-
-    const bnb = await stakeContract.priceBNBPrimeStake();
-    setPrimePricesBnb(parseInt(bnb));
-
-    const isBnb = await stakeContract.isBNB();
-    setActiveBNB(isBnb);
-  }
-
-  async function timeStakedPrime() {
-    
-    const reward = await stakeContract.lastRewardUpdatePrimeStake(wallet);
-
-    setRewardsPrime((reward / 10 ** 18).toFixed(2).toString());
-
-    const inStakeTime = await stakeContract.verifyVestingTimePrime(wallet);
-    let canWithdraw = parseInt(inStakeTime) <= 0 ? false : true;
-
-    setVerifyVestingPrime(canWithdraw);
-
-
-    const start = await stakeContract.primeStake(wallet);
-
-    if(parseInt(start.startBlock))
-     updateTimer(parseInt(start.startBlock), (value: string)=>{
-      setTimingPrimeReward(value);
-     });
-  }
-
-
-  //end functions prime
 
 
   // Functions Legacy
-  const getAmountStakedLegacy = async () => {
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = provider.getSigner();
-    const wallet = signer.getAddress();
-
-    const stake = new ethers.Contract(stakeAddress, StakeABI, signer);
-    const valueStaked = await stake.getStakedLegacy(wallet);
+  const getAmountStaked = async () => {
+    const valueStaked = await stakeContract.getStaked(wallet);
     let convertValue = parseInt(valueStaked) / 10 ** 18;
-    setStakedLegacy(convertValue.toString());
+    setStaked(convertValue.toString());
 
 
-    const userInStake = await stake.verifyLegacyStake(wallet);
+    const userInStake = await stakeContract.verifyInStakeStake(wallet);
 
-    setUserLegacyInStaked(userInStake);
+    console.log("userInStake", userInStake);
+
+    setUserInStake(userInStake);
 
   };
 
 
-  async function getAvaliableLegacy() {
-    const countersBalanace = await stakeContract.counterBalance(stakeAddress);
-    const legacyStakeLimit = await stakeContract.legacyStakeLimit();
-    let totalAvaliable = parseInt(legacyStakeLimit) - parseInt(countersBalanace.counterLegacy);
-    setAvaliableLegacy(totalAvaliable);
+  async function getAvaliable() {
+    const countersBalanace = await stakeContract.slots();
+    console.log("countersBalanace", countersBalanace)
+    const stakeLimit = await stakeContract.maxSlots();
+    let totalAvaliable = parseInt(stakeLimit) - parseInt(countersBalanace);
+    setAvaliableStake(totalAvaliable);
   }
 
-  async function infosStakeLegacy() {
+  async function infosStake() {
 
-    const maxStake = await stakeContract.maxLegacyRHT();
-    setMaxLegacyStake(parseInt(maxStake));
+    const maxStake = await stakeContract.maxStake();
+    setMaxStake(parseInt(maxStake));
 
-    const bnb = await stakeContract.priceBNBLegacyStake();
-    setLegacyPricesBnb(parseInt(bnb));
+    const whitelist = await stakeContract.whitelistEnabled();
+    setWhitelist(whitelist);
+    
+    if(whitelist == true){
+      const whitelisted = await stakeContract.isWhitelisted(wallet);
+      setWhitelisted(whitelisted);
+    }
 
-    const isBnb = await stakeContract.isBNB();
+    const apr = await stakeContract.apr();
+    setCurrentAPR(apr.toString());
+
+    const bnb = await stakeContract.stakeFee();
+    setPricesBnb(parseInt(bnb));
+
+    const isBnb = await stakeContract.feeEnabledStake();
     setActiveBNB(isBnb);
   }
 
-  async function timeStakedLegacy() {
+  async function timeStaked() {
     
-    const reward = await stakeContract.lastRewardUpdateLegacyStake(wallet);
+    const reward = await stakeContract.calculateReward(0,0,0);
 
     setRewardsLegacy((reward / 10 ** 18).toFixed(2).toString());
 
-    const inStakeTime = await stakeContract.verifyVestingTimeLegacy(wallet);
-    let canWithdraw = parseInt(inStakeTime) <= 0 ? false : true;
+  
 
-    setVerifyVestingLegacy(canWithdraw);
+    const start = await stakeContract.getStartTime(wallet);
+
+    const canWithdraw = await stakeContract.canWithdraw(wallet);
+
+    setCanWithdraw(canWithdraw && start > 0);
 
 
-    const start = await stakeContract.legacyStake(wallet);
-
-    if(parseInt(start.startBlock))
-     updateTimer(parseInt(start.startBlock), (value: string)=>{
-      setTimingLegacyReward(value);
-     });
+    if(start > 0){
+      updateTimer(parseInt(start), (value: string)=>{
+        setTimingLegacyReward(value);
+      });
+    }
+    
   }
 
 
@@ -358,7 +219,7 @@ export default function StakePage({statusConnect, stakeAddress, aprStakeSimple, 
   
 
   //Stake Section
- async function stake(option: 'simpleStakeLaunch' | 'primeStakeLaunch' | 'legacyStakeLaunch', value: number): Promise<void> {
+ async function stake(value: number): Promise<void> {
 
 
   if (value <= 0) {
@@ -373,40 +234,33 @@ export default function StakePage({statusConnect, stakeAddress, aprStakeSimple, 
 
   let tx;
 
-  let amountBnb = 0;
+  let amountBnb = !activeBNB ? 0 : pricesBnb;
 
-
-
-  if(activeBNB){
-     if(option == "simpleStakeLaunch"){
-      amountBnb = simplePricesBnb;
-    }else if(option == "primeStakeLaunch"){
-      amountBnb = primePricesBnb;
-    }else if(option == "legacyStakeLaunch"){
-      amountBnb = legacyPricesBnb;
-    }
-  }
   
-  console.log("amountBnb", amountBnb);
+  let amountSend =  ethers.utils.parseEther(( amountBnb / 10 ** 18).toString());
 
-  Swal.fire({
-    title: 'Please wait...',
-    icon: 'info',
-    showConfirmButton: false,
-    allowEscapeKey: false,
-    timer: 10000,
-  });
+  console.log("amountSend", amountSend);
+
 
 
   try {
-    tx = await stakeContract[option](valueInWei, {value: amountBnb});
+    tx = await stakeContract.stake(valueInWei, {value: amountSend});
+    
+    Swal.fire({
+      title: 'Please wait...',
+      icon: 'info',
+      showConfirmButton: false,
+      allowEscapeKey: false,
+    });
+    await tx.wait();
   } catch (error:any) {
-    console.log(error);
+    console.log("error", error);
+    let errorStake = error.message.match(/Error: ([^"]*)/)[1];
 
     Swal.fire({
       icon: 'error',
       title: 'Oops... ❌',
-      text: `Something went wrong while launching the stake. ${error.message} Please try again. ❌`,
+      text: `Something went wrong while launching the stake. ${errorStake} Please try again. ❌`,
     });
     return;
   }
@@ -419,10 +273,63 @@ export default function StakePage({statusConnect, stakeAddress, aprStakeSimple, 
   });
 }
 
+async function removeStake() {
+   // Show a confirmation dialog
+  const { value } = await Swal.fire({
+    title: "Are you sure?",
+    text: "This action will remove your stake and you will receive no rewards.",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, remove my stake",
+    cancelButtonText: "Cancel",
+  });
 
-async function withdrawStakeRewards(
-  stakeType: StakeType
-): Promise<void> {
+  if (!value) {
+    return;
+  }
+
+  // Show a loading alert
+  Swal.fire({
+    title: "Processing...",
+    text: "Please wait until your tokens are sent",
+    icon: "info",
+    allowOutsideClick: false,
+  });
+
+  let amountBnb = !activeBNB ? 0 : pricesBnb;
+
+  
+  let amountSend =  ethers.utils.parseEther(( amountBnb / 10 ** 18).toString());
+
+    
+
+  try {
+    // Call the appropriate function based on the stakeType
+    let tx: ethers.providers.TransactionResponse;
+    tx = await stakeContract.removeStake({value: amountSend});
+
+    // Wait for the transaction to be mined
+    await tx.wait();
+
+    // Show a success alert
+    Swal.fire({
+      title: "Success!",
+      text: "You have removed your stake, you have not received rewards",
+      icon: "success",
+    });
+  } catch (error) {
+    console.log("error", error);
+    // Show an error alert
+    Swal.fire({
+      title: "Error",
+      text: "There was an error removing your tokens. 😞",
+      icon: "error",
+    });
+  }
+}
+
+
+async function withdrawStakeRewards(): Promise<void> {
   // Show a loading alert
   Swal.fire({
     title: "Processing...",
@@ -431,33 +338,18 @@ async function withdrawStakeRewards(
     allowOutsideClick: false,
   });
 
-   let amountBnb = 0;
+  let amountBnb = !activeBNB ? 0 : pricesBnb;
+
+  
+  let amountSend =  ethers.utils.parseEther(( amountBnb / 10 ** 18).toString());
 
 
-
-    if(activeBNB){
-      if(stakeType == "simple"){
-        amountBnb = simplePricesBnb;
-      }else if(stakeType == "prime"){
-        amountBnb = primePricesBnb;
-      }else if(stakeType == "legacy"){
-        amountBnb = legacyPricesBnb;
-      }
-    }
     
 
   try {
     // Call the appropriate function based on the stakeType
     let tx: ethers.providers.TransactionResponse;
-    if (stakeType === "simple") {
-      tx = await stakeContract.withdrawRewardSimpleStake(wallet,  {value: amountBnb});
-    } else if (stakeType === "prime") {
-      tx = await stakeContract.withdrawRewardPrimeStake(wallet,  {value: amountBnb});
-    } else if (stakeType === "legacy") {
-      tx = await stakeContract.withdrawRewardLegacyStake(wallet,  {value: amountBnb});
-    } else {
-      throw new Error("Invalid stake type");
-    }
+    tx = await stakeContract.withdraw(wallet,  {value: amountSend});
 
     // Wait for the transaction to be mined
     await tx.wait();
@@ -485,95 +377,38 @@ async function withdrawStakeRewards(
     <div className="Container_StakePage">
       <section className="sectionb_stake" id="sectionb_stake">
         <Stake
-          amountToStake={amountSimple}
-          loadingApproving={loadingApproving}
-          rewards={rewardsSimple}
-          timing={timingSimpleReward}
-          inStake={userSimpleInStaked}
-          canWithdraw={verifyVestingSimple}
-          approve={() => {
-            approveToken();
-          }}
-          withdraw={() => {
-            if(verifyVestingSimple == true && userSimpleInStaked == true){
-              withdrawStakeRewards("simple");
-            }
-          }}
-          approved={approved}
-          onChange={(e: number) => {
-            setAmountSimple(e);
-          }}
-          title="Stake Classic"
-          setAmountToMax={() => {
-            setAmountSimple(maxSimpleStake);
-          }}
-          startStake={()=>{
-            stake("simpleStakeLaunch", amountSimple);
-          }}
-          apr="8%"
-          staked={StakedSimple}
-          totalToStake={AvaliableSimple}
-          period="1 month"
-          tvl={tvlSimple}
-        />
-        <Stake
-          amountToStake={amountPrime}
-          loadingApproving={loadingApproving}
-          rewards={rewardsPrime}
-          canWithdraw={verifyVestingPrime}
-          timing={timingPrimeReward}
-          inStake={userPrimeInStaked}
-          approve={() => {
-            approveToken();
-          }}
-          withdraw={() => {
-            if(verifyVestingPrime == true && userPrimeInStaked == true){
-              withdrawStakeRewards("prime");
-            }
-          }}
-          startStake={()=>{
-            stake("primeStakeLaunch", amountPrime);
-          }}
-          approved={approved}
-          onChange={(e:number) => {setAmountPrime(e)}}
-          title="Stake Premium"
-          setAmountToMax={() => {
-            setAmountPrime(maxPrimeStake);
-          }}
-          apr={aprStakePrime}
-          staked={StakedPrime}
-          totalToStake={AvaliablePrime}
-          period="1 month"
-          tvl={tvlPrime}
-        />
-        <Stake
-          amountToStake={amountLegacy}
+          whitelisted={whitelisted}
+          whitelist={whitelist}
+          amountToStake={amountStake}
           loadingApproving={loadingApproving}
           rewards={rewardsLegacy}
-          canWithdraw={verifyVestingLegacy}
+          canWithdraw={canWithdraw}
           timing={timingLegacyReward}
-          inStake={userLegacyInStaked}
+          inStake={userInStake}
           approve={() => {
             approveToken();
           }}
+          removeStake={()=>{
+            removeStake();
+          }}
           withdraw={() => {
-           if(verifyVestingLegacy == true && userLegacyInStaked == true){
-              withdrawStakeRewards("legacy");
+           if(userInStake == true){
+              withdrawStakeRewards();
             }
           }}
           startStake={()=>{
-            stake("legacyStakeLaunch", amountLegacy);
+            stake(amountStake);
           }}
           approved={approved}
-          onChange={(e:number) => {setAmountLegacy(e)}}
-          title="Stake Legacy"
+          onChange={(e:number) => {setAmountStake(e)}}
+          title={type}
           setAmountToMax={() => {
-            setAmountLegacy(maxLegacyStake);
+            setAmountStake(balanceRHT);
           }}
-          apr={aprStakeLegacy}
-          staked={StakedLegacy}
-          totalToStake={AvaliableLegacy}
-          period="1 month"
+          apr={currentAPR + "%"}
+          staked={Staked}
+          totalToStake={avaliableStake}
+          period={period}
           tvl={tvlLegacy}
         />
       </section>

@@ -1,5 +1,119 @@
 export const StakeABI = [
 	{
+		"inputs": [
+			{
+				"internalType": "contract ERC20",
+				"name": "_token",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_stakeFee",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_withdrawFee",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_maxPeriod",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_apr",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_maxSlots",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "_whitelistEnabled",
+				"type": "bool"
+			},
+			{
+				"internalType": "bool",
+				"name": "_feeEnabledStake",
+				"type": "bool"
+			},
+			{
+				"internalType": "bool",
+				"name": "_feeEnabledWithdraw",
+				"type": "bool"
+			},
+			{
+				"internalType": "address",
+				"name": "_feeWallet",
+				"type": "address"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "bool",
+				"name": "enabled",
+				"type": "bool"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "value",
+				"type": "uint256"
+			}
+		],
+		"name": "FeeChanged",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "value",
+				"type": "uint256"
+			}
+		],
+		"name": "MaxPeriodChanged",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "max",
+				"type": "uint256"
+			}
+		],
+		"name": "MaxStakeChanged",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "min",
+				"type": "uint256"
+			}
+		],
+		"name": "MinStakeChanged",
+		"type": "event"
+	},
+	{
 		"anonymous": false,
 		"inputs": [
 			{
@@ -19,14 +133,134 @@ export const StakeABI = [
 		"type": "event"
 	},
 	{
+		"anonymous": false,
 		"inputs": [
 			{
+				"indexed": false,
+				"internalType": "bool",
+				"name": "added",
+				"type": "bool"
+			},
+			{
+				"indexed": false,
 				"internalType": "uint256",
-				"name": "_amount",
+				"name": "value",
 				"type": "uint256"
 			}
 		],
-		"name": "addPollRewards",
+		"name": "PoolChanged",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "staker",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "value",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "startTime",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "endTime",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "reward",
+				"type": "uint256"
+			}
+		],
+		"name": "Stake",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "bool",
+				"name": "stakeLocked",
+				"type": "bool"
+			}
+		],
+		"name": "StakeLockChanged",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "bool",
+				"name": "enabled",
+				"type": "bool"
+			}
+		],
+		"name": "WhitelistChanged",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "staker",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "value",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "reward",
+				"type": "uint256"
+			}
+		],
+		"name": "Withdraw",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "bool",
+				"name": "withdrawLocked",
+				"type": "bool"
+			}
+		],
+		"name": "WithdrawLockChanged",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_value",
+				"type": "uint256"
+			}
+		],
+		"name": "addPool",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -35,18 +269,18 @@ export const StakeABI = [
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "_addressToWhitelist",
+				"name": "_user",
 				"type": "address"
 			}
 		],
-		"name": "addUserToLegacyWhitelist",
+		"name": "addToWhitelist",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
 		"inputs": [],
-		"name": "balanceLegacyStake",
+		"name": "apr",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -59,7 +293,7 @@ export const StakeABI = [
 	},
 	{
 		"inputs": [],
-		"name": "balanceLiquidityStake",
+		"name": "avaliableStake",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -71,21 +305,24 @@ export const StakeABI = [
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "balancePrimeStake",
-		"outputs": [
+		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "",
+				"name": "_value",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_startTime",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_endTime",
 				"type": "uint256"
 			}
 		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "balanceSimpleStake",
+		"name": "calculateReward",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -100,60 +337,16 @@ export const StakeABI = [
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "",
+				"name": "_sender",
 				"type": "address"
 			}
 		],
-		"name": "contractBalance",
+		"name": "canWithdraw",
 		"outputs": [
 			{
-				"internalType": "uint256",
-				"name": "simpleBalance",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "primeBalance",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "legacyBalance",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "lpBalance",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
+				"internalType": "bool",
 				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "counterBalance",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "counterSimple",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "counterPrime",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "counterLegacy",
-				"type": "uint256"
+				"type": "bool"
 			}
 		],
 		"stateMutability": "view",
@@ -161,12 +354,45 @@ export const StakeABI = [
 	},
 	{
 		"inputs": [],
-		"name": "endBLockStake",
+		"name": "enableRemoveStakeFee",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "feeEnabledStake",
 		"outputs": [
 			{
-				"internalType": "uint256",
+				"internalType": "bool",
 				"name": "",
-				"type": "uint256"
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "feeEnabledWithdraw",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "feeWallet",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
 			}
 		],
 		"stateMutability": "view",
@@ -180,7 +406,7 @@ export const StakeABI = [
 				"type": "address"
 			}
 		],
-		"name": "getStakedLegacy",
+		"name": "getStaked",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -195,11 +421,11 @@ export const StakeABI = [
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "_wallet",
+				"name": "_sender",
 				"type": "address"
 			}
 		],
-		"name": "getStakedPrime",
+		"name": "getStartTime",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -214,24 +440,11 @@ export const StakeABI = [
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "_wallet",
+				"name": "_user",
 				"type": "address"
 			}
 		],
-		"name": "getStakedSimple",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "isBNB",
+		"name": "isWhitelisted",
 		"outputs": [
 			{
 				"internalType": "bool",
@@ -244,176 +457,7 @@ export const StakeABI = [
 	},
 	{
 		"inputs": [],
-		"name": "isRequireUser",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "isTimeBlock",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "sender",
-				"type": "address"
-			}
-		],
-		"name": "lastRewardUpdateLegacyStake",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "claimable",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "sender",
-				"type": "address"
-			}
-		],
-		"name": "lastRewardUpdatePrimeStake",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "claimable",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "sender",
-				"type": "address"
-			}
-		],
-		"name": "lastRewardUpdateSimpleStake",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "claimable",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "legacyRHT",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "legacyStake",
-		"outputs": [
-			{
-				"internalType": "address payable",
-				"name": "user",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "startBlock",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "initialBalance",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "rewardWithdraw",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "percentReward",
-				"type": "uint256"
-			},
-			{
-				"internalType": "bool",
-				"name": "isStaking",
-				"type": "bool"
-			},
-			{
-				"internalType": "uint256",
-				"name": "endBLockStake",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "totalStaked",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_amount",
-				"type": "uint256"
-			}
-		],
-		"name": "legacyStakeLaunch",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "legacyStakeLimit",
+		"name": "maxPeriod",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -426,7 +470,7 @@ export const StakeABI = [
 	},
 	{
 		"inputs": [],
-		"name": "maxLegacyRHT",
+		"name": "maxSlots",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -439,7 +483,7 @@ export const StakeABI = [
 	},
 	{
 		"inputs": [],
-		"name": "maxPrimeRHT",
+		"name": "maxStake",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -452,7 +496,7 @@ export const StakeABI = [
 	},
 	{
 		"inputs": [],
-		"name": "maxSimpleRHT",
+		"name": "minStake",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -478,46 +522,7 @@ export const StakeABI = [
 	},
 	{
 		"inputs": [],
-		"name": "priceBNBLegacyStake",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "priceBNBPrimeStake",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "priceBNBSimpleStake",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "primeRHT",
+		"name": "pool",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -532,50 +537,42 @@ export const StakeABI = [
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "",
+				"name": "_user",
 				"type": "address"
 			}
 		],
-		"name": "primeStake",
+		"name": "removeFromWhitelist",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_value",
+				"type": "uint256"
+			}
+		],
+		"name": "removePool",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "removeStake",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "removeStakeFee",
 		"outputs": [
 			{
-				"internalType": "address payable",
-				"name": "user",
-				"type": "address"
-			},
-			{
 				"internalType": "uint256",
-				"name": "startBlock",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "initialBalance",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "rewardWithdraw",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "percentReward",
-				"type": "uint256"
-			},
-			{
-				"internalType": "bool",
-				"name": "isStaking",
-				"type": "bool"
-			},
-			{
-				"internalType": "uint256",
-				"name": "endBLockStake",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "totalStaked",
+				"name": "",
 				"type": "uint256"
 			}
 		],
@@ -583,14 +580,8 @@ export const StakeABI = [
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_amount",
-				"type": "uint256"
-			}
-		],
-		"name": "primeStakeLaunch",
+		"inputs": [],
+		"name": "removeStakeFeeEnabled",
 		"outputs": [
 			{
 				"internalType": "bool",
@@ -598,73 +589,7 @@ export const StakeABI = [
 				"type": "bool"
 			}
 		],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "primeStakeLimit",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "sender",
-				"type": "address"
-			}
-		],
-		"name": "removeMyTokenLegacyStake",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "sender",
-				"type": "address"
-			}
-		],
-		"name": "removeMyTokenPrimeStake",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "sender",
-				"type": "address"
-			}
-		],
-		"name": "removeMyTokenSimpleStake",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "removePollRewards",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "removePoolUser",
-		"outputs": [],
-		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -676,7 +601,7 @@ export const StakeABI = [
 	},
 	{
 		"inputs": [],
-		"name": "rewardsPerHour",
+		"name": "secondsInYear",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -688,53 +613,66 @@ export const StakeABI = [
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "rewardsPercentLegacyStake",
-		"outputs": [
+		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "",
+				"name": "_value",
 				"type": "uint256"
 			}
 		],
-		"stateMutability": "view",
+		"name": "setAPR",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "rewardsPercentPrimeStake",
-		"outputs": [
+		"inputs": [
 			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
+				"internalType": "contract ERC20",
+				"name": "_token",
+				"type": "address"
 			}
 		],
-		"stateMutability": "view",
+		"name": "setContract",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "rewardsPercentSimpleStake",
-		"outputs": [
+		"inputs": [
 			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
+				"internalType": "bool",
+				"name": "_enabled",
+				"type": "bool"
 			}
 		],
-		"stateMutability": "view",
+		"name": "setFeeEnabledStake",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bool",
+				"name": "_enabled",
+				"type": "bool"
+			}
+		],
+		"name": "setFeeEnabledWithdraw",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "_token",
+				"name": "_feeWallet",
 				"type": "address"
 			}
 		],
-		"name": "setContractAddress",
+		"name": "setFeeWallet",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -743,21 +681,11 @@ export const StakeABI = [
 		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "_simple",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_prime",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_legacy",
+				"name": "_value",
 				"type": "uint256"
 			}
 		],
-		"name": "setCounterEmergency",
+		"name": "setMaxPeriod",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -766,42 +694,11 @@ export const StakeABI = [
 		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "timeTo",
+				"name": "_maxSlots",
 				"type": "uint256"
 			}
 		],
-		"name": "setEndBLock",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bool",
-				"name": "_isRequireUser",
-				"type": "bool"
-			}
-		],
-		"name": "setIsRequireUser",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bool",
-				"name": "_isTimeBlock",
-				"type": "bool"
-			},
-			{
-				"internalType": "bool",
-				"name": "_isBNB",
-				"type": "bool"
-			}
-		],
-		"name": "setIstimeBlockAndBNBPrice",
+		"name": "setMaxSlots",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -810,55 +707,7 @@ export const StakeABI = [
 		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "_simpleStakeLimit",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_primeStakeLimit",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_legacyStakeLimit",
-				"type": "uint256"
-			}
-		],
-		"name": "setLimitePerStake",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_simpleRHT",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_primeRHT",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_legacyRHT",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_maxSimpleRHT",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_maxPrimeRHT",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_maxLegacyRHT",
+				"name": "_maxStake",
 				"type": "uint256"
 			}
 		],
@@ -871,26 +720,11 @@ export const StakeABI = [
 		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "_rewardsPerHour",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_rewardsPercentSimpleStake",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_rewardsPercentPrimeStake",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_rewardsPercentLegacyStake",
+				"name": "_minStake",
 				"type": "uint256"
 			}
 		],
-		"name": "setPercents",
+		"name": "setMinStake",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -899,21 +733,24 @@ export const StakeABI = [
 		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "_priceBNBSimpleStake",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_priceBNBPrimeStake",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_priceBNBLegacyStake",
+				"name": "_removeStakeFee",
 				"type": "uint256"
 			}
 		],
-		"name": "setPriceToStartStake",
+		"name": "setRemoveStakeFee",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_value",
+				"type": "uint256"
+			}
+		],
+		"name": "setStakeFee",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -922,11 +759,11 @@ export const StakeABI = [
 		"inputs": [
 			{
 				"internalType": "bool",
-				"name": "_stopStake",
+				"name": "_enabled",
 				"type": "bool"
 			}
 		],
-		"name": "setStopStake",
+		"name": "setWhitelistEnabled",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -934,19 +771,19 @@ export const StakeABI = [
 	{
 		"inputs": [
 			{
-				"internalType": "address",
-				"name": "_wallet",
-				"type": "address"
+				"internalType": "uint256",
+				"name": "_value",
+				"type": "uint256"
 			}
 		],
-		"name": "setWalletAddress",
+		"name": "setWithdrawFee",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
 		"inputs": [],
-		"name": "simpleRHT",
+		"name": "slots",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -960,79 +797,19 @@ export const StakeABI = [
 	{
 		"inputs": [
 			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "simpleStake",
-		"outputs": [
-			{
-				"internalType": "address payable",
-				"name": "user",
-				"type": "address"
-			},
-			{
 				"internalType": "uint256",
-				"name": "startBlock",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "initialBalance",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "rewardWithdraw",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "percentReward",
-				"type": "uint256"
-			},
-			{
-				"internalType": "bool",
-				"name": "isStaking",
-				"type": "bool"
-			},
-			{
-				"internalType": "uint256",
-				"name": "endBLockStake",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "totalStaked",
+				"name": "_value",
 				"type": "uint256"
 			}
 		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_amount",
-				"type": "uint256"
-			}
-		],
-		"name": "simpleStakeLaunch",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
+		"name": "stake",
+		"outputs": [],
 		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
 		"inputs": [],
-		"name": "simpleStakeLimit",
+		"name": "stakeFee",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -1045,7 +822,7 @@ export const StakeABI = [
 	},
 	{
 		"inputs": [],
-		"name": "stopStake",
+		"name": "stakeLocked",
 		"outputs": [
 			{
 				"internalType": "bool",
@@ -1054,6 +831,78 @@ export const StakeABI = [
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_sender",
+				"type": "address"
+			}
+		],
+		"name": "stakedTime",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "stakes",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "startTime",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "endTime",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "reward",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bool",
+				"name": "inStake",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "toggleStakeLock",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "toggleWithdrawLock",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -1061,48 +910,9 @@ export const StakeABI = [
 		"name": "token",
 		"outputs": [
 			{
-				"internalType": "contract IBEP20",
+				"internalType": "contract ERC20",
 				"name": "",
 				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "totalLegacyStaked",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "totalPrimeStaked",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "totalSimpleStaked",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -1125,11 +935,11 @@ export const StakeABI = [
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "sender",
+				"name": "_wallet",
 				"type": "address"
 			}
 		],
-		"name": "verifyLegacyStake",
+		"name": "verifyInStakeStake",
 		"outputs": [
 			{
 				"internalType": "bool",
@@ -1144,11 +954,11 @@ export const StakeABI = [
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "sender",
+				"name": "",
 				"type": "address"
 			}
 		],
-		"name": "verifyPrimeStake",
+		"name": "whitelist",
 		"outputs": [
 			{
 				"internalType": "bool",
@@ -1160,14 +970,8 @@ export const StakeABI = [
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "sender",
-				"type": "address"
-			}
-		],
-		"name": "verifySimpleStake",
+		"inputs": [],
+		"name": "whitelistEnabled",
 		"outputs": [
 			{
 				"internalType": "bool",
@@ -1179,94 +983,19 @@ export const StakeABI = [
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_whitelistedAddress",
-				"type": "address"
-			}
-		],
-		"name": "verifyUserLegacyWhitelist",
+		"inputs": [],
+		"name": "withdraw",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "withdrawFee",
 		"outputs": [
 			{
-				"internalType": "bool",
+				"internalType": "uint256",
 				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "sender",
-				"type": "address"
-			}
-		],
-		"name": "verifyVestingTimeLegacy",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "blockTime",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "sender",
-				"type": "address"
-			}
-		],
-		"name": "verifyVestingTimePrime",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "blockTime",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "sender",
-				"type": "address"
-			}
-		],
-		"name": "verifyVestingTimeSimple",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "blockTime",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "timeBlocked",
-				"type": "uint256"
-			}
-		],
-		"name": "vestingTime",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "blockTime",
 				"type": "uint256"
 			}
 		],
@@ -1275,72 +1004,15 @@ export const StakeABI = [
 	},
 	{
 		"inputs": [],
-		"name": "wallet",
+		"name": "withdrawLocked",
 		"outputs": [
 			{
-				"internalType": "address",
+				"internalType": "bool",
 				"name": "",
-				"type": "address"
+				"type": "bool"
 			}
 		],
 		"stateMutability": "view",
 		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "withdrawBNB",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "sender",
-				"type": "address"
-			}
-		],
-		"name": "withdrawRewardLegacyStake",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "sender",
-				"type": "address"
-			}
-		],
-		"name": "withdrawRewardPrimeStake",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "sender",
-				"type": "address"
-			}
-		],
-		"name": "withdrawRewardSimpleStake",
-		"outputs": [],
-		"stateMutability": "payable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "withdrawToken",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"stateMutability": "payable",
-		"type": "receive"
 	}
 ]

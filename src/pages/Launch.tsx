@@ -51,33 +51,74 @@ export default function Launch() {
   );
   const [loading, setLoading] = useState(false);
   const [stakeContract, setStakeContract] = useState("0xdDd9D9155582ABbCe018E831bf3e8D8f50ac382f");
-  const [aprStakeSimple, setAprStakeSimple] = useState("8%");
-  const [aprStakePrime, setAprStakePrime] = useState("12%");
-  const [aprStakeLegacy, setAprStakeLegacy] = useState("14%");
   const [currentMonth, setcurrentMonth] = useState("30");
 
   const tokenBUSD = "0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee"; // 0xe9e7cea3dedca5984780bafc599bd69add087d56 Mainnet BUSD //Testnet: 0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee
   const tokenAddress = "0xb16b19872a83C11B49beCa7A02e156f49De0A9D2";
 
-  function buttonClick(days:string) {
+  const [stakeContractInfo, setstakeContractInfo] = useState([
+    {
+      address: "0xE5e748128F80EE014fE2363CD66Db703fD0Ee5cF",
+      type: "Stake Simple",
+      days: "30",
+      period: "1 month"
+    },
+    {
+      address: "0xC8a9ACa7110a306E24192EBe90028b8eFC2b5e0a",
+      type: "Stake Prime",
+      days: "30",
+      period: "1 month"
+    },
+    {
+      address: "0x4D9ECaCCD109AE6b4A5DC46cf99Fe5E18EF9Ae1e",
+      type: "Stake Legacy",
+      days: "30",
+      period: "1 month"
+    },
+    {
+      address: "0xADF00ec8ad5d7e1a1439319E5434812f655F9F05",
+      type: "Stake Simple",
+      days: "60",
+      period: "2 months"
+    },
+    {
+      address: "0x9504dEe98EfEBCD8011F4b6b8dC2301E2232751B",
+      type: "Stake Prime",
+      days: "60",
+      period: "2 months"
+    },
+    {
+      address: "0xc15B9E053963213EACD30539d4B940d48832A732",
+      type: "Stake Legacy",
+      days: "60",
+      period: "2 months"
+    },
+    {
+      address: "0x4E5cad5CAfD21D6fb5688c519423f3b7bb14353a",
+      type: "Stake Simple",
+      days: "90",
+      period: "3 months"
+    },
+    {
+      address: "0x4E5cad5CAfD21D6fb5688c519423f3b7bb14353a",
+      type: "Stake Prime",
+      days: "90",
+      period: "3 months"
+    },
+    {
+      address: "0x4E5cad5CAfD21D6fb5688c519423f3b7bb14353a",
+      type: "Stake Legacy",
+      days: "90",
+      period: "3 months"
+    }
+  ]);
 
+  function buttonClick(days:string) {
     if(days == "30"){
-      setStakeContract("0xdDd9D9155582ABbCe018E831bf3e8D8f50ac382f");
-      setAprStakeSimple("8%");
-      setAprStakePrime("12%");
-      setAprStakeLegacy("14%");
       setcurrentMonth("30");
     }else if(days == "60"){
-      setStakeContract("0x30Dc268513021555225f8f5871212ffc8660b671");
-      setAprStakeSimple("14%");
-      setAprStakePrime("15%");
-      setAprStakeLegacy("16%");
       setcurrentMonth("60")
     }else if(days  == "90"){
-      setStakeContract("0xd02c4ab3ECfA8f266936D74aa42472b73a8a931C");
-      setAprStakeSimple("14%");
-      setAprStakePrime("15%");
-      setAprStakeLegacy("18%");
       setcurrentMonth("90");
     }
      
@@ -281,7 +322,11 @@ export default function Launch() {
         </div>
       </div>
       <section className="sectionb_stake Container_StakePage" id="sectionb_stake">
-        <StakePage aprStakeSimple={aprStakeSimple} aprStakePrime={aprStakePrime} aprStakeLegacy={aprStakeLegacy} stakeAddress={stakeContract} statusConnect={statusConnect}/>
+        {stakeContractInfo.map((item)=>
+          (item.days == currentMonth ?
+            <StakePage stakeAddress={item.address} statusConnect={statusConnect} type={item.type} period={item.period}/>
+          : undefined)
+        )}
       </section>
     </div>
   );

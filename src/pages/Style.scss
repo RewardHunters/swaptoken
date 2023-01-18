@@ -433,6 +433,32 @@ aside {
     }
 }
 
+.btn_paper_error {
+    display: grid;
+    text-decoration: none;
+    border: 2px solid #e42c2c;
+    background-color: #e42c2c;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 0.3em;
+    position: relative;
+    transition: all 1s;
+    align-content: center;
+    justify-items: center;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    overflow: hidden;
+    margin-top: 10px;
+    cursor: pointer;
+
+    &:hover {
+        color: #ffffff;
+        background-color: transparent;
+    }
+}
+
 .btn_paper_input {
     display: grid;
     text-decoration: none;

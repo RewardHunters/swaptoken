@@ -17,9 +17,12 @@ export default function Stake({
   amountToStake,
   onChange,
   startStake,
+  removeStake,
   approved,
   canWithdraw,
   loadingApproving,
+  whitelisted,
+  whitelist,
 }: {
   approve: Function;
   withdraw: Function;
@@ -35,11 +38,15 @@ export default function Stake({
   amountToStake: number;
   onChange: Function;
   startStake: Function;
+  removeStake: Function;
   approved: boolean;
   canWithdraw: boolean;
   inStake: boolean;
   loadingApproving: boolean;
+  whitelisted: boolean;
+  whitelist: boolean;
 }) {
+
 
   return (
     <div className="container_stake">
@@ -80,25 +87,59 @@ export default function Stake({
               Max
             </div>
           </div>
-          <div
-            onClick={() => {
-              if (!approved) {
-                approve();
-              }else{
-                startStake();
-              }
-            }}
-            className="btn_paper"
-          >
-            {approved ? "Stake" : loadingApproving ? "Approving..." : "Approve"}
-          </div>
+          {whitelist == true && whitelisted == false ?
+            <div
+              onClick={() => {
+                if (!approved) {
+                  approve();
+                }else{
+                  startStake();
+                }
+              }}
+              className="btn_paper rewardis-disabled"
+            >
+             You are not on the whitelist
+            </div>
+          : 
+            <div
+              onClick={() => {
+                if (!approved) {
+                  approve();
+                }else{
+                  startStake();
+                }
+              }}
+              className="btn_paper"
+            >
+              {approved ? "Stake" : loadingApproving ? "Approving..." : "Approve"}
+            </div>
+          }
 
-          <div
-            onClick={() => { withdraw() }}
-            className={`btn_paper ${canWithdraw ? "" : "rewardis-disabled"}`}
-          >
-            Withdraw Rewards {canWithdraw ? "(Available)" : ""}
-          </div>
+          
+          {canWithdraw?
+            <div
+              onClick={() => { withdraw() }}
+              className={`btn_paper ${canWithdraw ? "" : "rewardis-disabled"}`}
+            >
+              Withdraw Rewards {canWithdraw ? "(Available)" : ""}
+            </div>
+          : 
+            (inStake ?
+              <div
+                onClick={() => { removeStake() }}
+                className={`btn_paper_error`}
+              >
+                Remove Tokens (No Rewards)
+              </div>
+            : 
+              <div
+                onClick={() => { withdraw() }}
+                className={`btn_paper ${canWithdraw ? "" : "rewardis-disabled"}`}
+              >
+                Withdraw Rewards {canWithdraw ? "(Available)" : ""}
+              </div>
+            )
+          }
 
           <div className="stake_infos_card">
             <span className="title">REWARDS</span>

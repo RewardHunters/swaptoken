@@ -1,805 +1,318 @@
-/**
- *Submitted for verification at BscScan.com on 2022-06-24
-*/
-
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.14;
+pragma solidity ^0.8.7;
 
-abstract contract ReentrancyGuard {
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-    uint256 private constant _NOT_ENTERED = 1;
-    uint256 private constant _ENTERED = 2;
 
-    uint256 private _status;
+// Defines the stake contract
+contract StakeContract is Ownable {
+  using SafeMath for uint256;
 
-    constructor() {
-        _status = _NOT_ENTERED;
+  // Define uma variável para armazenar o endereço do contrato ERC20 do token
+  ERC20 public token;
+
+  // Defines the event type used to record stakes
+  event Stake(
+    address indexed staker,
+    uint256 value,
+    uint256 startTime,
+    uint256 endTime,
+    uint256 reward
+  );
+
+  // Defines the event type used to record withdrawals
+  event Withdraw(
+    address indexed staker,
+    uint256 value,
+    uint256 reward
+  );
+
+  // Defines the event type used to record changes to the whitelist
+  event WhitelistChanged(bool enabled);
+
+  // Defines the event type used to record changes to the fee
+  event FeeChanged(bool enabled, uint256 value);
+
+  // Defines the event type used to record changes to the max period
+  event MaxPeriodChanged(uint256 value);
+
+  event PoolChanged(bool added, uint256 value);
+
+  event StakeLockChanged(bool stakeLocked);
+  event WithdrawLockChanged(bool withdrawLocked);
+
+  // Defines the stake fee (in BNB)
+  uint256 public stakeFee;
+
+  // Defines the withdraw fee (in BNB)
+  uint256 public withdrawFee;
+
+  // Defines the max period for the stake (in days)
+  uint256 public maxPeriod;
+
+  // Defines the current APR (in percentage)
+  uint256 public apr;
+
+  // Defines whether the whitelist is enabled or not
+  bool public whitelistEnabled;
+
+  // Defines whether the fee is enabled or not
+  bool public feeEnabledStake;
+
+  // Defines whether the fee is enabled or not
+  bool public feeEnabledWithdraw;
+
+  // Defines whether the stake function is locked or not
+  bool public stakeLocked;
+
+  // Defines whether the withdraw function is locked or not
+  bool public withdrawLocked;
+
+  // Defines the amount of tokens in the pool
+  uint256 public pool;
+
+  // Defines the address of the wallet where the fee should be sent
+  address public feeWallet;
+
+  // Defines the mapping that stores the stake information for each user
+  mapping(address => StakeInfo) public stakes;
+
+  // Defines the mapping that stores the whitelist information for each address
+  mapping(address => bool) public whitelist;
+
+  // Declare the constant for the number of seconds in a year
+  uint256 public constant secondsInYear = 31536000;
+
+  // Defines the struct type that stores stake information for each user
+  struct StakeInfo {
+    uint256 amount;
+    uint256 startTime;
+    uint256 endTime;
+    uint256 reward;
+  }
+
+    constructor(
+    ERC20 _token,
+    uint256 _stakeFee,
+    uint256 _withdrawFee,
+    uint256 _maxPeriod,
+    uint256 _apr,
+    bool _whitelistEnabled,
+    bool _feeEnabledStake,
+    bool _feeEnabledWithdraw,
+    address _feeWallet
+  ) {
+    token = _token;
+    stakeFee = _stakeFee;
+    withdrawFee = _withdrawFee;
+    maxPeriod = _maxPeriod;
+    apr = _apr;
+    whitelistEnabled = _whitelistEnabled;
+    feeEnabledStake = _feeEnabledStake;
+    feeEnabledWithdraw = _feeEnabledWithdraw;
+    feeWallet = _feeWallet;
+  }
+
+  // Function that allows the user to stake tokens
+  function stake(uint256 _value) public payable {
+    require(!stakeLocked, "Stake function is currently locked");
+
+    token.approve(address(this), _value);
+    // Check if the user is on the whitelist (if it is enabled)
+    require(!whitelistEnabled || isWhitelisted(msg.sender), "User is not on the whitelist");
+
+    // Check that the user is sending the correct amount of BNB (if the fee is enabled)
+    if (feeEnabledStake) {
+      require(msg.value == stakeFee, "Incorrect BNB value");
+    } else {
+      require(msg.value == 0, "Sending BNB is not allowed");
     }
 
+    // Transfer tokens from the user to the contract
+    require(token.transferFrom(msg.sender, address(this), _value), "Error transferring tokens to the contract");
 
-    modifier nonReentrant() {
-        // On the first call to nonReentrant, _notEntered will be true
-        require(_status != _ENTERED, "ReentrancyGuard: reentrant call");
+    // Calculate the start and end time of the stake
+    uint256 startTime = block.timestamp;
+    uint256 endTime = startTime.add(maxPeriod.mul(1 days));
 
-        // Any calls to nonReentrant after this point will fail
-        _status = _ENTERED;
+    // Calculate the reward for the stake
+    uint256 reward = calculateReward(_value, startTime, endTime);
 
-        _;
+    // Add the stake to the stakes mapping
+    stakes[msg.sender] = StakeInfo(_value, startTime, endTime, reward);
 
-        // By storing the original value once again, a refund is triggered (see
-        // https://eips.ethereum.org/EIPS/eip-2200)
-        _status = _NOT_ENTERED;
-    }
-}
+    // Emit the Stake event
+    emit Stake(msg.sender, _value, startTime, endTime, reward);
 
+    // Update the pool
+    pool = pool.add(_value);
+  }
 
-abstract contract Context {
-    function _msgSender() internal view virtual returns (address) {
-        return msg.sender;
-    }
+  function addPool(uint256 _value) public onlyOwner {
+    token.approve(address(this), _value);
+    require(token.transferFrom(msg.sender, address(this), _value), "Error transferring tokens to the contract");
+    pool = pool.add(_value);
+    emit PoolChanged(true, _value);
+  }
 
-    function _msgData() internal view virtual returns (bytes calldata) {
-        return msg.data;
-    }
-}
+  function removePool(uint256 _value) public onlyOwner {
+      token.approve(msg.sender, _value);
+      require(pool >= _value, "Pool value is less than the value to remove");
+      require(token.transfer(msg.sender, _value), "Error transferring tokens to owner");
+      pool = pool.sub(_value);
+      emit PoolChanged(false, _value);
+  }
 
+  // Function that allows the user to withdraw tokens
+  function withdraw(uint256 _amount) public payable{
+    require(!withdrawLocked, "Withdraw function is currently locked");
+    // Get the stake info for the user
+    StakeInfo storage stakeInf = stakes[msg.sender];
 
-abstract contract Ownable is Context {
-    address private _owner;
+    // Check if the user has a stake
+    require(stakeInf.amount > 0, "User does not have a stake");
 
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    // Check that the user is not withdrawing before the end time of the stake
+    require(block.timestamp >= stakeInf.endTime, "Cannot withdraw before the end of the stake period");
 
-    /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
-     */
-    constructor() {
-        _transferOwnership(_msgSender());
-    }
+    // Check that the user is not withdrawing more tokens than they have staked
+    require(_amount <= stakeInf.amount, "Cannot withdraw more tokens than staked");
 
-    /**
-     * @dev Returns the address of the current owner.
-     */
-    function owner() public view virtual returns (address) {
-        return _owner;
-    }
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(owner() == _msgSender(), "Ownable: caller is not the owner");
-        _;
-    }
-
-    /**
-     * @dev Leaves the contract without owner. It will not be possible to call
-     * `onlyOwner` functions anymore. Can only be called by the current owner.
-     *
-     * NOTE: Renouncing ownership will leave the contract without an owner,
-     * thereby removing any functionality that is only available to the owner.
-     */
-    function renounceOwnership() public virtual onlyOwner {
-        _transferOwnership(address(0));
+     // Check that the user is sending the correct amount of BNB (if the fee is enabled)
+    if (feeEnabledWithdraw) {
+      require(msg.value == withdrawFee, "Incorrect BNB value");
+    } else {
+      require(msg.value == 0, "Sending BNB is not allowed");
     }
 
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
-     */
-    function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
-        _transferOwnership(newOwner);
+    // Calculate the reward for the withdrawal
+    uint256 reward = calculateReward(_amount, stakeInf.startTime, stakeInf.endTime);
+
+      // Check if the user is withdrawing before the end time of the stake and has to pay a fee
+    if (block.timestamp < stakeInf.endTime && feeEnabledStake) {
+      // Check that the user is sending the correct amount of BNB
+      require(msg.value == stakeFee, "Incorrect BNB value");
+      // Subtract the fee from the reward
+      reward = reward.sub(stakeFee);
     }
 
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Internal function without access restriction.
-     */
-    function _transferOwnership(address newOwner) internal virtual {
-        address oldOwner = _owner;
-        _owner = newOwner;
-        emit OwnershipTransferred(oldOwner, newOwner);
-    }
-}
+    // Transfer tokens from the contract to the user
+    require(token.transfer(msg.sender, _amount), "Error transferring tokens to the user");
 
-// Simples Interface do Contrato do Token
+    // Update the stake value
+    stakeInf.amount = stakeInf.amount.sub(_amount);
 
-interface IBEP20 {
-        function totalSupply() external view returns (uint);
-        function allowance(address owner, address spender) external view  returns (uint256);
-        function transfer(address recipient, uint256 amount) external returns (bool) ;
-        function transferFrom( address sender, address recipient, uint256 amount) external returns (bool);
-        function balanceOf(address account) external view  returns (uint256);
-        function approve(address _spender, uint256 _amount) external returns (bool);
-        event Transfer(address indexed from, address indexed to, uint256 value);
-        event Approval(address indexed owner, address indexed spender, uint256 value);  
-        }
+    // Update the pool
+    pool = pool.sub(_amount);
 
-library Address {
+    // Emit the Withdraw event
+    emit Withdraw(msg.sender, _amount, reward);
 
-    function isContract(address account) internal view returns (bool) {
-        bytes32 codehash;
-        bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
-        assembly { codehash := extcodehash(account) }
-        return (codehash != accountHash && codehash != 0x0);
-    }
+    // Transfer the reward to the user
+    token.transfer(msg.sender, reward);
+  }
 
+  // Function that allows the owner to add an address to the whitelist
+  function addToWhitelist(address _user) public onlyOwner {
+    whitelist[_user] = true;
+    emit WhitelistChanged(whitelistEnabled);
+  }
 
-    function sendValue(address payable recipient, uint256 amount) internal {
-        require(address(this).balance >= amount, "Address: insufficient balance");
+  // Function that allows the owner to remove an address from the whitelist
+  function removeFromWhitelist(address _user) public onlyOwner {
+    delete whitelist[_user];
+    emit WhitelistChanged(whitelistEnabled);
+  }
 
- 
-        (bool success, ) = recipient.call{ value: amount }("");
-        require(success, "Address: unable to send value, recipient may have reverted");
-    }
+  // Function that enables/disables the whitelist
+  function setWhitelistEnabled(bool _enabled) public onlyOwner {
+    whitelistEnabled = _enabled;
+    emit WhitelistChanged(_enabled);
+  }
 
+  // Function that enables/disables the fee
+  function setFeeEnabledStake(bool _enabled) public onlyOwner {
+    feeEnabledStake = _enabled;
+    emit FeeChanged(_enabled, stakeFee);
+  }
 
-    function functionCall(address target, bytes memory data) internal returns (bytes memory) {
-      return functionCall(target, data, "Address: low-level call failed");
-    }
+  // Function that enables/disables the fee
+  function setFeeEnabledWithdraw(bool _enabled) public onlyOwner {
+    feeEnabledWithdraw = _enabled;
+    emit FeeChanged(_enabled, withdrawFee);
+  }
 
+  // Function that allows the owner to set the early withdrawal fee
+  function setStakeFee(uint256 _value) public onlyOwner {
+    stakeFee = _value;
+    emit FeeChanged(feeEnabledStake, _value);
+  }
 
-    function functionCall(address target, bytes memory data, string memory errorMessage) internal returns (bytes memory) {
-        return _functionCallWithValue(target, data, 0, errorMessage);
-    }
+  
+  function toggleStakeLock() public onlyOwner {
+      stakeLocked = !stakeLocked;
+      emit StakeLockChanged(stakeLocked);
+  }
 
-
-    function functionCallWithValue(address target, bytes memory data, uint256 value) internal returns (bytes memory) {
-        return functionCallWithValue(target, data, value, "Address: low-level call with value failed");
-    }
-
-    function functionCallWithValue(address target, bytes memory data, uint256 value, string memory errorMessage) internal returns (bytes memory) {
-        require(address(this).balance >= value, "Address: insufficient balance for call");
-        return _functionCallWithValue(target, data, value, errorMessage);
-    }
-
-    function _functionCallWithValue(address target, bytes memory data, uint256 weiValue, string memory errorMessage) private returns (bytes memory) {
-        require(isContract(target), "Address: call to non-contract");
-
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returndata) = target.call{ value: weiValue }(data);
-        if (success) {
-            return returndata;
-        } else {
-            
-            if (returndata.length > 0) {
-             
-                assembly {
-                    let returndata_size := mload(returndata)
-                    revert(add(32, returndata), returndata_size)
-                }
-            } else {
-                revert(errorMessage);
-            }
-        }
-    }
-}
+  function toggleWithdrawLock() public onlyOwner {
+      withdrawLocked = !withdrawLocked;
+      emit WithdrawLockChanged(withdrawLocked);
+  }
 
 
-contract Staking is Ownable, ReentrancyGuard{
+   // Function that allows the owner to set the early withdrawal fee
+  function setWithdrawFee(uint256 _value) public onlyOwner {
+    withdrawFee = _value;
+    emit FeeChanged(feeEnabledWithdraw, _value);
+  }
 
-    using Address for address;
-    // Contador de Users para Stake
-    uint256 public simpleStakeLimit = 600;
-    uint256 public primeStakeLimit = 300;
-    uint256 public legacyStakeLimit = 300;
-    // Endereço do Token
-    IBEP20 public token;
-    // Endereço Owner
-    address public wallet;
-    // Porcentagem e Rendimento Stake
-    uint256 public simpleRHT = 5000000000000000000;
-    uint256 public primeRHT = 5000000000000000000;
-    uint256 public legacyRHT = 5000000000000000000;
-    uint256 public maxSimpleRHT = 5000000000000000000000;
-    uint256 public maxPrimeRHT = 5000000000000000000000;
-    uint256 public maxLegacyRHT = 5000000000000000000000;
-    uint256 public rewardsPerHour = 3600;
-    uint256 public rewardsPercentSimpleStake = 20000;
-    uint256 public rewardsPercentPrimeStake = 10000;
-    uint256 public rewardsPercentLegacyStake = 10000;
-    uint256 public  endBLockStake = 2592000;
-    // Preço em BNB
-    uint public priceBNBSimpleStake = 6000000000000000;
-    uint public priceBNBPrimeStake = 6000000000000000;
-    uint public priceBNBLegacyStake = 6000000000000000;
-    // Bolleano para Definir tempo de bloqueio
-    bool public isTimeBlock = true;
-    bool public isBNB = true;
-    bool public isRequireUser = true;
-    bool public stopStake = false;
+  // Function that allows the owner to set the max period
+  function setMaxPeriod(uint256 _value) public onlyOwner {
+    maxPeriod = _value;
+    emit MaxPeriodChanged(_value);
+  }
 
-    mapping(address => SimpleStake) public simpleStake;
-    mapping(address => PrimeStake) public primeStake;
-    mapping(address => LegacyStake) public legacyStake;
-    mapping(address => Balance) public contractBalance;
-    mapping(address => CounterBalance) public counterBalance;
-    mapping(address => bool) whitelistedAddressesLegacy;
+  // Function that allows the owner to set the APR
+  function setAPR(uint256 _value) public onlyOwner {
+    apr = _value;
+  }
 
+  // Function that calculates the reward for a stake/withdrawal
+  function calculateReward(uint256 _value, uint256 _startTime, uint256 _endTime) public view returns (uint256) {
+    StakeInfo storage stakeInf = stakes[msg.sender];
 
-
-    // Estruturas
-
-    struct CounterBalance {
-        uint256 counterSimple;
-        uint256 counterPrime;
-        uint256 counterLegacy;
+    if(_value == 0){
+      _value = stakeInf.amount;
     }
 
-    struct PrimeStake {
-        address payable user;
-        uint startBlock;
-        uint256 initialBalance;
-        uint256 rewardWithdraw;
-        uint256 percentReward;
-        bool isStaking;
-        uint256 endBLockStake;
-        uint256 totalStaked;
+    if(_startTime == 0){
+      _startTime = stakeInf.startTime;
     }
 
-    struct SimpleStake {
-        address payable user;
-        uint startBlock;
-        uint256 initialBalance;
-        uint256 rewardWithdraw;
-        uint256 percentReward;
-        bool isStaking;
-        uint256 endBLockStake;
-        uint256 totalStaked;
+    if(_endTime == 0){
+      _endTime = block.timestamp;
     }
 
-    struct LegacyStake {
-        address payable user;
-        uint startBlock;
-        uint256 initialBalance;
-        uint256 rewardWithdraw;
-        uint256 percentReward;
-        bool isStaking;
-        uint256 endBLockStake;
-        uint256 totalStaked;
-    }
-
-    struct Balance {
-        uint256 simpleBalance;
-        uint256 primeBalance;
-        uint256 legacyBalance;
-        uint256 lpBalance;
-    }
-
-
-    // Modificadores
-    modifier onlyStakeSimple() {
-        SimpleStake storage isUser = simpleStake[msg.sender];
-        require(isUser.isStaking, "Must be in Staking");
-        _;
-    }
-
-    modifier onlyStakePrime() {
-        PrimeStake storage isUser = primeStake[msg.sender];
-        require(isUser.isStaking, "Must be in Staking");
-        _;
-    }
-
-    modifier onlyStakeLegacy() {
-        LegacyStake storage isUser = legacyStake[msg.sender];
-        require(isUser.isStaking, "Must be in Staking");
-        _;
-    }
-
-    // Permite que o contrato Receba e transfira BNB
-    receive() external payable {}
-
-    function setIstimeBlockAndBNBPrice(bool _isTimeBlock, bool _isBNB) external onlyOwner {
-        isTimeBlock = _isTimeBlock;
-        isBNB = _isBNB;
-    }
-
-
-
-   function setPercents(uint256 _rewardsPerHour, uint256 _rewardsPercentSimpleStake, uint256 _rewardsPercentPrimeStake, uint256 _rewardsPercentLegacyStake) external onlyOwner {
-      rewardsPerHour =  _rewardsPerHour;
-      rewardsPercentSimpleStake = _rewardsPercentSimpleStake;
-      rewardsPercentPrimeStake = _rewardsPercentPrimeStake;
-      rewardsPercentLegacyStake = _rewardsPercentLegacyStake;
-   }
    
-    function setContractAddress(address _token) external onlyOwner {
-        token = IBEP20(_token);
+
+    // Calculate the elapsed time (in seconds)
+    uint256 elapsedTime = _endTime - _startTime;
+
+     uint256 maxDays = maxPeriod * 86400;
+
+    if(elapsedTime > maxDays){
+      elapsedTime = maxDays;
     }
+    // Calculate the elapsed time (in seconds) divided by the number of seconds in a year
+    // and multiply by the annual percentage rate (APR)
+    // Use the safe math library to prevent overflow
+    return (_value.mul(elapsedTime).div(secondsInYear).mul(apr)).div(100);
+  }
 
-    function setStopStake(bool _stopStake) external onlyOwner {
-        stopStake = _stopStake;
-    }
-
-    function setLimitePerStake(uint256 _simpleStakeLimit, uint256 _primeStakeLimit, uint256 _legacyStakeLimit) external onlyOwner {
-        simpleStakeLimit = _simpleStakeLimit;
-        primeStakeLimit = _primeStakeLimit;
-        legacyStakeLimit = _legacyStakeLimit;
-    }
-
-    function setWalletAddress(address _wallet) external onlyOwner {
-        wallet = _wallet;
-    }
-
-    function verifySimpleStake(address sender) public view returns(bool) {
-        SimpleStake storage isUser = simpleStake[sender];
-        if(isUser.isStaking) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    function verifyPrimeStake(address sender) public view returns(bool) {
-        PrimeStake storage isUser = primeStake[sender];
-        if(isUser.isStaking) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    function verifyLegacyStake(address sender) public view returns(bool) {
-        LegacyStake storage isUser = legacyStake[sender];
-        if(isUser.isStaking) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    function setPriceToStartStake(uint256 _priceBNBSimpleStake, uint256 _priceBNBPrimeStake, uint256 _priceBNBLegacyStake) external onlyOwner {
-        priceBNBSimpleStake = _priceBNBSimpleStake;
-        priceBNBPrimeStake = _priceBNBPrimeStake;
-        priceBNBLegacyStake = _priceBNBLegacyStake;
-    }
-
-
-    //------------- Funções Administrativas do Contrato -------------------//
-    function addPollRewards(uint256 _amount) external onlyOwner nonReentrant{
-        Balance storage isContract = contractBalance[address(this)];
-        IBEP20(token).transferFrom(msg.sender, address(this), _amount);
-        isContract.lpBalance += _amount;
-    }
-
-    function balanceSimpleStake() public view returns(uint256) {
-        Balance storage isContract = contractBalance[address(this)];
-        return isContract.simpleBalance;
-    }
-
-    function balancePrimeStake() public view returns(uint256) {
-        Balance storage isContract = contractBalance[address(this)];
-        return isContract.primeBalance;
-    }
-
-    function balanceLegacyStake() public view returns(uint256) {
-        Balance storage isContract = contractBalance[address(this)];
-        return isContract.legacyBalance;
-    }
-
-    function addUserToLegacyWhitelist(address _addressToWhitelist) public onlyOwner {
-        whitelistedAddressesLegacy[_addressToWhitelist] = true;
-    }
-
-    function verifyUserLegacyWhitelist(address _whitelistedAddress) public view returns(bool) {
-        bool userIsWhitelisted = whitelistedAddressesLegacy[_whitelistedAddress];
-        return userIsWhitelisted;
-    }
-
-    function setCounterEmergency(uint _simple, uint _prime, uint _legacy) external onlyOwner {
-        CounterBalance storage counters = counterBalance[address(this)];
-        counters.counterSimple = _simple;
-        counters.counterPrime = _prime;
-        counters.counterLegacy = _legacy;
-    }
-
-    function balanceLiquidityStake() public view returns(uint256) {
-        Balance storage isContract = contractBalance[address(this)];
-        return isContract.lpBalance;
-    }
-
-    function removePollRewards() external onlyOwner nonReentrant{
-        Balance storage isContract = contractBalance[address(this)];
-        IBEP20(token).transfer(msg.sender, isContract.lpBalance);
-         isContract.lpBalance = 0;
-    }
-
-    function setEndBLock(uint256 timeTo) external onlyOwner {
-        endBLockStake = timeTo;
-    }
-
-    function removePoolUser() external onlyOwner nonReentrant{
-        Balance storage isContract = contractBalance[address(this)];
-        uint totalWithdraw = isContract.primeBalance + isContract.simpleBalance + isContract.legacyBalance;
-        IBEP20(token).transfer(msg.sender, totalWithdraw);
-        isContract.simpleBalance = 0;
-        isContract.primeBalance  = 0;
-        isContract.legacyBalance  = 0;
-        totalWithdraw = 0;
-    }
-
-    function _forwardFunds() private {
-    require(wallet != address(0), "Cannot withdraw the ETH balance to the zero address");
-      payable(wallet).transfer(msg.value);
-    }
-
-
-    function setMaxStake(uint256 _simpleRHT, uint256 _primeRHT, uint256 _legacyRHT, uint256 _maxSimpleRHT, uint256 _maxPrimeRHT, uint256 _maxLegacyRHT) external onlyOwner {
-        simpleRHT = _simpleRHT ;
-        primeRHT = _primeRHT;
-        legacyRHT = _legacyRHT;
-        maxSimpleRHT = _maxSimpleRHT;
-        maxPrimeRHT = _maxPrimeRHT;
-        maxLegacyRHT = _maxLegacyRHT;
-    }
-
-    function setIsRequireUser(bool _isRequireUser) external onlyOwner {
-        isRequireUser = _isRequireUser;
-    }
-    
-    
-    function simpleStakeLaunch(uint256 _amount) external payable nonReentrant returns(bool){
-        if(isBNB) {
-            require(msg.value == priceBNBSimpleStake, "Must be identical to the set price");
-            _forwardFunds();
-        }
-        // Inicia o Stake do Usuario
-        SimpleStake storage isUser = simpleStake[msg.sender];
-
-        require(_amount  >= simpleRHT && _amount <= maxSimpleRHT, "Must be greater than the minimum and less than the maximum");
-
-        if(isUser.initialBalance == 0) {
-            CounterBalance storage counters = counterBalance[address(this)];
-            counters.counterSimple += 1;
-            uint256 newUser = counters.counterSimple;
-            require(newUser <= simpleStakeLimit, "Holders limit reached");
-            isUser.startBlock = block.timestamp;
-        }
-        isUser.user = payable(msg.sender);
-        // Atualiza o saldo do Contrato
-        Balance storage isContract = contractBalance[address(this)];
-        IBEP20(token).transferFrom(isUser.user, address(this), _amount);
-        isContract.simpleBalance += _amount;
-        // Strutura do Simple Stake
-        isUser.isStaking = true;
-        isUser.endBLockStake = block.timestamp + endBLockStake;
-        isUser.percentReward = rewardsPercentSimpleStake;
-
-        if(isUser.initialBalance != 0) {
-            isUser.rewardWithdraw = lastRewardUpdateSimpleStake(msg.sender);
-        }
-
-        isUser.initialBalance += _amount; 
-        isUser.totalStaked += _amount;
-        
-        if(isUser.initialBalance > maxSimpleRHT) {
-            require(isUser.initialBalance <= maxSimpleRHT, "Stake Limit Reached");
-        }
-
-        return true;
-    }
-
-    function getStakedSimple (address _wallet) public view returns(uint256){
-        SimpleStake storage isUser = simpleStake[_wallet];
-        return isUser.totalStaked;
-    }
-
-    function getStakedPrime (address _wallet) public view returns(uint256){
-        PrimeStake storage isUser = primeStake[_wallet];
-        return isUser.totalStaked;
-    }
-
-    function getStakedLegacy (address _wallet) public view returns(uint256){
-        LegacyStake storage isUser = legacyStake[_wallet];
-        return isUser.totalStaked;
-    }
-
-
-
-    function primeStakeLaunch(uint256 _amount) external payable nonReentrant returns(bool){
-        if(isBNB) {
-        require(msg.value == priceBNBPrimeStake, "Must be identical to the set price");
-        _forwardFunds();
-        }
-        // Inicia o Stake do Usuario
-        PrimeStake storage isUser = primeStake[msg.sender];
-        require(_amount >= primeRHT && _amount <= maxPrimeRHT, "Must be greater than the minimum and less than the maximum");
-
-        if(isUser.initialBalance == 0) {
-        CounterBalance storage counters = counterBalance[address(this)];
-        counters.counterPrime += 1;
-        uint256 newUser = counters.counterPrime;
-        require(newUser <= primeStakeLimit, "Holders limit reached");
-        isUser.startBlock = block.timestamp;
-        }
-
-        isUser.user = payable(msg.sender);
-        // Atualiza o saldo do Contrato
-        Balance storage isContract = contractBalance[address(this)];
-        IBEP20(token).transferFrom(isUser.user, address(this), _amount);
-        isContract.primeBalance += _amount;
-        // Strutura do Simple Stake
-        isUser.isStaking = true;
-        isUser.percentReward = rewardsPercentPrimeStake;
-        isUser.endBLockStake = block.timestamp + endBLockStake;
-        if(isUser.initialBalance != 0) {
-            isUser.rewardWithdraw = lastRewardUpdateSimpleStake(msg.sender);
-        }
-
-        isUser.initialBalance += _amount; 
-        isUser.totalStaked += _amount;
-        if(isUser.initialBalance > maxPrimeRHT) {
-         require(isUser.initialBalance <= maxPrimeRHT, "Stake Limit Reached");
-        }
-
-        return true;
-
-    }
-
-
-
-    function legacyStakeLaunch(uint256 _amount) external payable nonReentrant returns(bool){
-        require(whitelistedAddressesLegacy[msg.sender], "You need to be whitelisted");
-
-        if(isBNB) {
-        require(msg.value == priceBNBLegacyStake, "Must be identical to the set price");
-        _forwardFunds();
-        }
-        // Inicia o Stake do Usuario
-        LegacyStake storage isUser = legacyStake[msg.sender];
-        require(_amount >= legacyRHT && _amount <= maxLegacyRHT, "Must be greater than the minimum and less than the maximum");
-
-        if(isUser.initialBalance == 0) {
-        CounterBalance storage counters = counterBalance[address(this)];
-        counters.counterLegacy += 1;
-        uint256 newUser = counters.counterLegacy;
-        require(newUser <= legacyStakeLimit, "Holders limit reached");
-        isUser.startBlock = block.timestamp;
-        }
-
-        isUser.user = payable(msg.sender);
-        // Atualiza o saldo do Contrato
-        Balance storage isContract = contractBalance[address(this)];
-        IBEP20(token).transferFrom(isUser.user, address(this), _amount);
-        isContract.legacyBalance += _amount;
-        // Strutura do Simple Stake
-        isUser.isStaking = true;
-        isUser.percentReward = rewardsPercentLegacyStake;
-        isUser.endBLockStake = block.timestamp + endBLockStake;
-        if(isUser.initialBalance != 0) {
-            isUser.rewardWithdraw = lastRewardUpdateSimpleStake(msg.sender);
-        }
-
-        isUser.initialBalance += _amount; 
-        isUser.totalStaked += _amount;
-        if(isUser.initialBalance > maxLegacyRHT) {
-         require(isUser.initialBalance <= maxLegacyRHT, "Stake Limit Reached");
-        }
-
-        return true;
-
-    }
-    // Retira os Tokens Aportados
-    function removeMyTokenSimpleStake(address sender) external payable onlyStakeSimple nonReentrant {
-        if(isBNB) {
-        require(msg.value == priceBNBSimpleStake, "Must be identical to the set price");
-        _forwardFunds();
-        }
-        require(!stopStake, "Withdrawals Disable");
-        // Inicia o Stake do Usuario
-        SimpleStake storage isUser = simpleStake[sender];
-        require(isUser.isStaking, "Need to be staking");
-        // Atualiza o saldo do Contrato
-        CounterBalance storage counters = counterBalance[address(this)];
-        
-        if(counters.counterSimple < 1) {
-        counters.counterSimple = 0;
-        } else {
-            counters.counterSimple -= 1;
-        }
-
-        Balance storage isContract = contractBalance[address(this)];
-        isUser.isStaking = false;
-        isUser.startBlock = 0;
-        isUser.endBLockStake = 0;
-        isUser.rewardWithdraw = 0;
-        IBEP20(token).transfer(isUser.user, isUser.initialBalance);
-        isContract.simpleBalance -= isUser.initialBalance;
-        isUser.initialBalance = 0;
-    }
-    // Retira os Tokens Aportados
-    function removeMyTokenPrimeStake(address sender) external payable onlyStakePrime nonReentrant {
-        if(isBNB) {
-        require(msg.value == priceBNBSimpleStake, "Must be identical to the set price");
-        _forwardFunds();
-        }
-        require(!stopStake, "Withdrawals Disable");
-        // Inicia o Stake do Usuario
-        PrimeStake storage isUser = primeStake[sender];
-        require(isUser.isStaking, "Need to be staking");
-        // Atualiza o saldo do Contrato
-        CounterBalance storage counters = counterBalance[address(this)];
-        
-        if(counters.counterPrime < 1) {
-        counters.counterPrime = 0;
-        } else {
-            counters.counterPrime -= 1;
-        }
-        
-        Balance storage isContract = contractBalance[address(this)];
-        isUser.isStaking = false;
-        isUser.startBlock = 0;
-        isUser.rewardWithdraw = 0;
-        isUser.endBLockStake = 0;
-        IBEP20(token).transfer(isUser.user, isUser.initialBalance);
-        isContract.primeBalance -= isUser.initialBalance;
-        isUser.initialBalance = 0;
-    }
-
-    function removeMyTokenLegacyStake(address sender) external payable onlyStakeLegacy nonReentrant {
-        if(isBNB) {
-        require(msg.value == priceBNBSimpleStake, "Must be identical to the set price");
-        _forwardFunds();
-        }
-        require(!stopStake, "Withdrawals Disable");
-        // Inicia o Stake do Usuario
-        LegacyStake storage isUser = legacyStake[sender];
-        require(isUser.isStaking, "Need to be staking");
-        // Atualiza o saldo do Contrato
-        CounterBalance storage counters = counterBalance[address(this)];
-        
-        if(counters.counterLegacy < 1) {
-        counters.counterLegacy = 0;
-        } else {
-            counters.counterLegacy -= 1;
-        }
-        
-        Balance storage isContract = contractBalance[address(this)];
-        isUser.isStaking = false;
-        isUser.startBlock = 0;
-        isUser.rewardWithdraw = 0;
-        isUser.endBLockStake = 0;
-        IBEP20(token).transfer(isUser.user, isUser.initialBalance);
-        isContract.legacyBalance -= isUser.initialBalance;
-        isUser.initialBalance = 0;
-    }
-    // Retira Recompensas
-    function withdrawRewardSimpleStake(address sender) external payable onlyStakeSimple nonReentrant {
-        if(isBNB) {
-        require(msg.value == priceBNBSimpleStake, "Must be identical to the set price");
-        _forwardFunds();
-        }
-        
-        SimpleStake storage isUser = simpleStake[sender];
-        // Tempo de Bloqueio para retirada de Recompensas
-        if(isTimeBlock) {
-            require(vestingTime(isUser.endBLockStake) == 0, "Blocking time must be set to zero");
-        }
-        require(isUser.isStaking, "Need to be staking");
-        isUser.rewardWithdraw += lastRewardUpdateSimpleStake(sender);
-        Balance storage isContract = contractBalance[address(this)];
-        isContract.lpBalance -= isUser.rewardWithdraw;
-        IBEP20(token).transfer(sender, isUser.rewardWithdraw);
-        isUser.startBlock = 0;
-        isUser.rewardWithdraw = 0;
-        isUser.endBLockStake = block.timestamp + endBLockStake;
-    }
-
-    // Retira Recompensas
-    function withdrawRewardPrimeStake(address sender) external payable onlyStakePrime nonReentrant {
-        if(isBNB) {
-        require(msg.value == priceBNBSimpleStake, "Must be identical to the set price");
-        _forwardFunds();
-        }
-        // Tempo de Bloqueio para retirada de Recompensas
-        PrimeStake storage isUser = primeStake[sender];
-        if(isTimeBlock) {
-            require(vestingTime(isUser.endBLockStake) == 0, "Blocking time must be set to zero");
-        }
-        
-        require(isUser.isStaking, "Need to be staking");
-        isUser.rewardWithdraw += lastRewardUpdatePrimeStake(sender);
-        Balance storage isContract = contractBalance[address(this)];
-        isContract.lpBalance -= isUser.rewardWithdraw;
-        IBEP20(token).transfer(sender, isUser.rewardWithdraw);
-        isUser.startBlock = 0;
-        isUser.rewardWithdraw = 0;
-        isUser.endBLockStake = block.timestamp + endBLockStake;
-    }
-
-    function withdrawRewardLegacyStake(address sender) external payable onlyStakeLegacy nonReentrant {
-        if(isBNB) {
-        require(msg.value == priceBNBSimpleStake, "Must be identical to the set price");
-        _forwardFunds();
-        }
-        // Tempo de Bloqueio para retirada de Recompensas
-        LegacyStake storage isUser = legacyStake[sender];
-        if(isTimeBlock) {
-            require(vestingTime(isUser.endBLockStake) == 0, "Blocking time must be set to zero");
-        }
-        
-        require(isUser.isStaking, "Need to be staking");
-        isUser.rewardWithdraw += lastRewardUpdateLegacyStake(sender);
-        Balance storage isContract = contractBalance[address(this)];
-        isContract.lpBalance -= isUser.rewardWithdraw;
-        IBEP20(token).transfer(sender, isUser.rewardWithdraw);
-        isUser.startBlock = 0;
-        isUser.rewardWithdraw = 0;
-        isUser.endBLockStake = block.timestamp + endBLockStake;
-    }
-
-    /*
-    *   Retira BNB do Contrato
-    * @Apenas Owner
-    */
-    function withdrawBNB() external onlyOwner nonReentrant {
-        uint256 balance = address(this).balance;
-        payable(wallet).transfer(balance);
-        balance = 0;
-    }
-
-    /*
-    *   Retira tokens do Contrato
-    * @Apenas Owner
-    */
-    function withdrawToken() external onlyOwner nonReentrant {
-        uint256 balance = IBEP20(token).balanceOf(address(this));
-        IBEP20(token).transfer(wallet, balance);
-        balance = 0;
-    }
-
-    // Recompensas do launchpad Stake
-    function currentSimpleStake( SimpleStake memory isUser) private view returns(uint256) {
-       return ((block.timestamp - isUser.startBlock) * isUser.initialBalance) / rewardsPerHour / rewardsPercentSimpleStake;
-    }
-    // Recompensas do launchpad Stake
-    function currentPrimeStake( PrimeStake memory isUser) private view returns(uint256) {
-       return ((block.timestamp - isUser.startBlock) * isUser.initialBalance) / rewardsPerHour / rewardsPercentPrimeStake;
-    }
-
-    function currentLegacyStake( LegacyStake memory isUser) private view returns(uint256) {
-       return ((block.timestamp - isUser.startBlock) * isUser.initialBalance) / rewardsPerHour / rewardsPercentLegacyStake;
-    }
-
-    // Recompensa Simple
-    function lastRewardUpdateSimpleStake(address sender) public view  returns(uint256 claimable) {
-        SimpleStake memory isUser = simpleStake[sender];
-        if(isUser.isStaking) {
-            return isUser.rewardWithdraw += currentSimpleStake(isUser);
-        } else {
-            return isUser.rewardWithdraw = 0;
-        }
-    }
-
-    // Recompensa Prime
-    function lastRewardUpdatePrimeStake(address sender) public view  returns(uint256 claimable) {
-        PrimeStake memory isUser = primeStake[sender];
-        if(isUser.isStaking) {
-            return isUser.rewardWithdraw += currentPrimeStake(isUser);
-        } else {
-            return isUser.rewardWithdraw = 0;
-        }
-    }
-
-    function lastRewardUpdateLegacyStake(address sender) public view  returns(uint256 claimable) {
-        LegacyStake memory isUser = legacyStake[sender];
-        if(isUser.isStaking) {
-            return isUser.rewardWithdraw += currentLegacyStake(isUser);
-        } else {
-            return isUser.rewardWithdraw = 0;
-        }
-    }
-    
-
-    // Saldo Prime
-    function vestingTime(uint256 timeBlocked) public view returns(uint256 blockTime) {
-        uint256 currentTime = block.timestamp;
-        if(currentTime >= timeBlocked) {
-            return 0;
-        }
-        else {
-            return (timeBlocked - currentTime);
-        }
-    }
-
+  // Function that returns true if the user is on the whitelist
+  function isWhitelisted(address _user) private view returns (bool) {
+    return whitelist[_user];
+  }
 }
