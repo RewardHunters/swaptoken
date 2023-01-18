@@ -382,7 +382,7 @@ async function withdrawStakeRewards(): Promise<void> {
           amountToStake={amountStake}
           loadingApproving={loadingApproving}
           rewards={rewardsLegacy}
-          canWithdraw={canWithdraw}
+          canWithdraw={true}
           timing={timingLegacyReward}
           inStake={userInStake}
           approve={() => {
