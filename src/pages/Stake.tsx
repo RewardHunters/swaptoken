@@ -124,7 +124,7 @@ export default function Stake({
               Withdraw Rewards {canWithdraw ? "(Available)" : ""}
             </div>
           : 
-            (inStake ?
+            (false ?
               <div
                 onClick={() => { removeStake() }}
                 className={`btn_paper_error`}
