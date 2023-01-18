@@ -349,7 +349,7 @@ async function withdrawStakeRewards(): Promise<void> {
   try {
     // Call the appropriate function based on the stakeType
     let tx: ethers.providers.TransactionResponse;
-    tx = await stakeContract.withdraw(wallet,  {value: amountSend});
+    tx = await stakeContract.withdraw({value: amountSend});
 
     // Wait for the transaction to be mined
     await tx.wait();
