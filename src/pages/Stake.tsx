@@ -7,6 +7,8 @@ export default function Stake({
   title,
   inStake,
   rewards,
+  maxStake,
+  minStake,
   apr,
   staked,
   timing,
@@ -26,9 +28,11 @@ export default function Stake({
 }: {
   approve: Function;
   withdraw: Function;
-  tvl: string;
+  tvl: number;
   title: string;
   rewards: string;
+  maxStake: number;
+  minStake: number;
   apr: string;
   staked: string;
   timing: string;
@@ -47,6 +51,9 @@ export default function Stake({
   whitelist: boolean;
 }) {
 
+  function handleFocus(e:any) {
+    e.currentTarget.select();
+  }
 
   return (
     <div className="container_stake">
@@ -78,9 +85,11 @@ export default function Stake({
               className="input-field"
               type="text"
               value={amountToStake}
+              onFocus={ handleFocus }
               onChange={(e) => {
                 onChange(e.target.value);
               }}
+              autoFocus
               placeholder={"0.0"}
             />
             <div onClick={() => setAmountToMax()} className="btn_paper_input">
@@ -150,8 +159,16 @@ export default function Stake({
             <span className="value">{period}</span>
           </div>
           <div className="stake_infos_card">
+            <span className="title">Min Stake</span>
+            <span className="value">{minStake}</span>
+          </div>
+          <div className="stake_infos_card">
+            <span className="title">Max Stake</span>
+            <span className="value">{maxStake}</span>
+          </div>
+          <div className="stake_infos_card">
             <span className="title">TVL</span>
-            <span className="value">$RHT {tvl}</span>
+            <span className="value">{tvl} $RHT</span>
           </div>
           <div className="stake_infos_card">
             <span className="title">Time in Stake</span>

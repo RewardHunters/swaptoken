@@ -58,55 +58,55 @@ export default function Launch() {
 
   const [stakeContractInfo, setstakeContractInfo] = useState([
     {
-      address: "0xE5e748128F80EE014fE2363CD66Db703fD0Ee5cF",
+      address: "0x525d7707540d17371d06811e05eDD4598BfAF032",
       type: "Stake Simple",
       days: "30",
       period: "1 month"
     },
     {
-      address: "0xC8a9ACa7110a306E24192EBe90028b8eFC2b5e0a",
+      address: "0x525d7707540d17371d06811e05eDD4598BfAF032",
       type: "Stake Prime",
       days: "30",
       period: "1 month"
     },
     {
-      address: "0x4D9ECaCCD109AE6b4A5DC46cf99Fe5E18EF9Ae1e",
+      address: "0x525d7707540d17371d06811e05eDD4598BfAF032",
       type: "Stake Legacy",
       days: "30",
       period: "1 month"
     },
     {
-      address: "0xADF00ec8ad5d7e1a1439319E5434812f655F9F05",
+      address: "0x525d7707540d17371d06811e05eDD4598BfAF032",
       type: "Stake Simple",
       days: "60",
       period: "2 months"
     },
     {
-      address: "0x9504dEe98EfEBCD8011F4b6b8dC2301E2232751B",
+      address: "0x525d7707540d17371d06811e05eDD4598BfAF032",
       type: "Stake Prime",
       days: "60",
       period: "2 months"
     },
     {
-      address: "0xc15B9E053963213EACD30539d4B940d48832A732",
+      address: "0x525d7707540d17371d06811e05eDD4598BfAF032",
       type: "Stake Legacy",
       days: "60",
       period: "2 months"
     },
     {
-      address: "0x4E5cad5CAfD21D6fb5688c519423f3b7bb14353a",
+      address: "0x525d7707540d17371d06811e05eDD4598BfAF032",
       type: "Stake Simple",
       days: "90",
       period: "3 months"
     },
     {
-      address: "0x4E5cad5CAfD21D6fb5688c519423f3b7bb14353a",
+      address: "0x525d7707540d17371d06811e05eDD4598BfAF032",
       type: "Stake Prime",
       days: "90",
       period: "3 months"
     },
     {
-      address: "0x4E5cad5CAfD21D6fb5688c519423f3b7bb14353a",
+      address: "0x525d7707540d17371d06811e05eDD4598BfAF032",
       type: "Stake Legacy",
       days: "90",
       period: "3 months"

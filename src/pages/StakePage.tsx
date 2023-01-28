@@ -15,6 +15,7 @@ export default function StakePage({statusConnect, stakeAddress, type, period}:{s
   const [avaliableStake, setAvaliableStake] = useState(300);
   const [amountStake, setAmountStake] = useState(0);
   const [maxStake, setMaxStake] = useState(0);
+  const [minStake, setMinStake] = useState(0);
 
   const [approved, setApproved] = useState(false);
   const [loadingApproving, setLoadingApproving] = useState(false);
@@ -33,7 +34,7 @@ export default function StakePage({statusConnect, stakeAddress, type, period}:{s
 
   const [canWithdraw, setCanWithdraw] = useState(false);
   
-  const [tvlLegacy, setTvlLegacy] = useState("0");
+  const [tokenTVL, setTokenTVL] = useState(0);
 
   const [currentAPR, setCurrentAPR] = useState("");
 
@@ -54,7 +55,7 @@ export default function StakePage({statusConnect, stakeAddress, type, period}:{s
     timeStaked();
     getBalanceRHT();
 
-  }, [stakeAddress]);
+  }, [stakeAddress, statusConnect]);
   
 
 
@@ -127,7 +128,13 @@ export default function StakePage({statusConnect, stakeAddress, type, period}:{s
   async function infosStake() {
 
     const maxStake = await stakeContract.maxStake();
-    setMaxStake(parseInt(maxStake));
+    setMaxStake(parseInt(maxStake) / 10 ** 18);
+
+    const minStake = await stakeContract.minStake();
+    setMinStake(parseInt(minStake) / 10 ** 18);
+
+    const tvl = await stakeContract.tokenTVL();
+    setTokenTVL(parseInt(tvl) / 10 ** 18);
 
     const whitelist = await stakeContract.whitelistEnabled();
     setWhitelist(whitelist);
@@ -138,6 +145,7 @@ export default function StakePage({statusConnect, stakeAddress, type, period}:{s
     }
 
     const apr = await stakeContract.apr();
+    console.log("apr", apr);
     setCurrentAPR(apr.toString());
 
     const bnb = await stakeContract.stakeFee();
@@ -219,10 +227,10 @@ export default function StakePage({statusConnect, stakeAddress, type, period}:{s
   
 
   //Stake Section
- async function stake(value: number): Promise<void> {
+ async function stake(valueStake: number): Promise<void> {
 
 
-  if (value <= 0) {
+  if (valueStake <= 0) {
     throw new Error('Invalid value');
   }
 
@@ -230,7 +238,7 @@ export default function StakePage({statusConnect, stakeAddress, type, period}:{s
   const signer = provider.getSigner();
   const stakeContract = new ethers.Contract(stakeAddress, StakeABI, signer);
 
-  const valueInWei = ethers.utils.parseEther((value).toString());
+  const valueInWei = ethers.utils.parseEther((valueStake).toString());
 
   let tx;
 
@@ -266,11 +274,23 @@ export default function StakePage({statusConnect, stakeAddress, type, period}:{s
   }
 
   console.log(`Transaction hash: ${tx.hash}`);
-  Swal.fire({
+  const { value } = await Swal.fire({
     icon: 'success',
     title: 'Stake launched! ✅',
     text: `Your stake has been launched with transaction hash: ${tx.hash} ✅ \n Wait for the transaction to finish and restart the page to check your stake`,
   });
+
+  if (value) {
+    verifyApprove();
+
+
+    //Legacy
+    getAmountStaked();
+    getAvaliable();
+    infosStake();
+    timeStaked();
+    getBalanceRHT();
+  }
 }
 
 async function removeStake() {
@@ -312,11 +332,23 @@ async function removeStake() {
     await tx.wait();
 
     // Show a success alert
-    Swal.fire({
+    const { value } = await Swal.fire({
       title: "Success!",
       text: "You have removed your stake, you have not received rewards",
       icon: "success",
     });
+
+    if (value) {
+      verifyApprove();
+
+
+      //Legacy
+      getAmountStaked();
+      getAvaliable();
+      infosStake();
+      timeStaked();
+      getBalanceRHT();
+    }
   } catch (error) {
     console.log("error", error);
     // Show an error alert
@@ -382,7 +414,7 @@ async function withdrawStakeRewards(): Promise<void> {
           amountToStake={amountStake}
           loadingApproving={loadingApproving}
           rewards={rewardsLegacy}
-          canWithdraw={true}
+          canWithdraw={canWithdraw}
           timing={timingLegacyReward}
           inStake={userInStake}
           approve={() => {
@@ -409,7 +441,9 @@ async function withdrawStakeRewards(): Promise<void> {
           staked={Staked}
           totalToStake={avaliableStake}
           period={period}
-          tvl={tvlLegacy}
+          tvl={tokenTVL}
+          maxStake={maxStake}
+          minStake={minStake}
         />
       </section>
     </div>

@@ -43,6 +43,12 @@ contract StakeContract is Ownable {
   event StakeLockChanged(bool stakeLocked);
   event WithdrawLockChanged(bool withdrawLocked);
 
+  event MinStakeChanged(uint256 min);
+  event MaxStakeChanged(uint256 max);
+
+  //max pool
+  uint256 public avaliableStake;
+
   // Defines the stake fee (in BNB)
   uint256 public stakeFee;
 
@@ -85,12 +91,26 @@ contract StakeContract is Ownable {
   // Declare the constant for the number of seconds in a year
   uint256 public constant secondsInYear = 31536000;
 
+  //avaliable slots
+  uint256 public slots;
+
+  uint256 public maxSlots = 600;
+
+  uint256 public maxStake;
+  uint256 public minStake;
+
+  uint256 public removeStakeFee;
+  bool public removeStakeFeeEnabled;
+
+  uint256 public tokenTVL;
+
   // Defines the struct type that stores stake information for each user
   struct StakeInfo {
     uint256 amount;
     uint256 startTime;
     uint256 endTime;
     uint256 reward;
+    bool inStake;
   }
 
     constructor(
@@ -99,6 +119,8 @@ contract StakeContract is Ownable {
     uint256 _withdrawFee,
     uint256 _maxPeriod,
     uint256 _apr,
+    uint256 _maxStake,
+    uint256 _minStake,
     bool _whitelistEnabled,
     bool _feeEnabledStake,
     bool _feeEnabledWithdraw,
@@ -106,32 +128,44 @@ contract StakeContract is Ownable {
   ) {
     token = _token;
     stakeFee = _stakeFee;
-    withdrawFee = _withdrawFee;
+    withdrawFee = _withdrawFee; 
     maxPeriod = _maxPeriod;
     apr = _apr;
     whitelistEnabled = _whitelistEnabled;
     feeEnabledStake = _feeEnabledStake;
     feeEnabledWithdraw = _feeEnabledWithdraw;
     feeWallet = _feeWallet;
+    maxStake = _maxStake;
+    minStake = _minStake;
   }
 
   // Function that allows the user to stake tokens
   function stake(uint256 _value) public payable {
-    require(!stakeLocked, "Stake function is currently locked");
+    require(!stakes[msg.sender].inStake, "Error: You already made a stake (to change the stake value you need to cancel your current stake)");
+
+    require(_value >= minStake && _value <= maxStake, "Error: The value is not within the allowed range");
+
+    require(slots <= maxSlots, "Error: Staking is not possible, the limit has been reached");
+
+    require(!stakeLocked, "Error: Stake function is currently locked");
+
+    require(pool > _value, "Error: there is not enough pool for you to make the stake");
 
     token.approve(address(this), _value);
     // Check if the user is on the whitelist (if it is enabled)
-    require(!whitelistEnabled || isWhitelisted(msg.sender), "User is not on the whitelist");
+    require(!whitelistEnabled || isWhitelisted(msg.sender), "Error: User is not on the whitelist");
 
     // Check that the user is sending the correct amount of BNB (if the fee is enabled)
     if (feeEnabledStake) {
-      require(msg.value == stakeFee, "Incorrect BNB value");
-    } else {
-      require(msg.value == 0, "Sending BNB is not allowed");
+      require(msg.value == stakeFee, "Error: Incorrect BNB value");
+    }
+
+    if (feeEnabledStake) {
+        payable(feeWallet).transfer(msg.value);
     }
 
     // Transfer tokens from the user to the contract
-    require(token.transferFrom(msg.sender, address(this), _value), "Error transferring tokens to the contract");
+    require(token.transferFrom(msg.sender, address(this), _value), "Error: Error transferring tokens to the contract");
 
     // Calculate the start and end time of the stake
     uint256 startTime = block.timestamp;
@@ -141,83 +175,145 @@ contract StakeContract is Ownable {
     uint256 reward = calculateReward(_value, startTime, endTime);
 
     // Add the stake to the stakes mapping
-    stakes[msg.sender] = StakeInfo(_value, startTime, endTime, reward);
+    stakes[msg.sender] = StakeInfo(_value, startTime, endTime, reward, true);
 
     // Emit the Stake event
     emit Stake(msg.sender, _value, startTime, endTime, reward);
 
     // Update the pool
     pool = pool.add(_value);
+
+    tokenTVL = tokenTVL.add(_value);
+
+    slots++;
   }
 
   function addPool(uint256 _value) public onlyOwner {
     token.approve(address(this), _value);
-    require(token.transferFrom(msg.sender, address(this), _value), "Error transferring tokens to the contract");
+    require(token.transferFrom(msg.sender, address(this), _value), "Error: Error transferring tokens to the contract");
     pool = pool.add(_value);
     emit PoolChanged(true, _value);
   }
 
   function removePool(uint256 _value) public onlyOwner {
       token.approve(msg.sender, _value);
-      require(pool >= _value, "Pool value is less than the value to remove");
-      require(token.transfer(msg.sender, _value), "Error transferring tokens to owner");
+      require(pool >= _value, "Error: Pool value is less than the value to remove");
+      require(token.transfer(msg.sender, _value), "Error: Error transferring tokens to owner");
       pool = pool.sub(_value);
       emit PoolChanged(false, _value);
   }
 
+  event TransferError(address indexed user, uint256 value);
+
+
+  function removeStake() public payable {
+    require(stakes[msg.sender].inStake == true, "Error: User does not have a stake");
+
+    
+
+    // Check that the user is sending the correct amount of BNB (if the fee is enabled)
+    if (removeStakeFeeEnabled) {
+      require(msg.value == removeStakeFee, "Error: Incorrect BNB value");
+    }
+
+    if (feeEnabledStake) {
+        payable(feeWallet).transfer(msg.value);
+    }
+
+    token.approve(address(this), stakes[msg.sender].amount);
+    // Transfer tokens from the user to the contract
+    require(token.transferFrom(address(this), msg.sender, stakes[msg.sender].amount), "Error: Error transferring tokens to the contract");
+
+
+
+    // Add the stake to the stakes mapping
+    stakes[msg.sender] = StakeInfo(0, 0, 0, 0, false);
+
+    // Update the pool
+    pool = pool.sub(stakes[msg.sender].amount);
+
+    tokenTVL = tokenTVL.sub(stakes[msg.sender].amount);
+    
+    slots--;
+  }
+
+  function setRemoveStakeFee(uint256 _removeStakeFee) public onlyOwner {
+      removeStakeFee = _removeStakeFee;
+  }
+
+  function enableRemoveStakeFee() public onlyOwner {
+      removeStakeFeeEnabled = true;
+  }
+
   // Function that allows the user to withdraw tokens
-  function withdraw(uint256 _amount) public payable{
-    require(!withdrawLocked, "Withdraw function is currently locked");
+  function withdraw() public payable {
+    require(!withdrawLocked, "Error: Withdraw function is currently locked");
     // Get the stake info for the user
     StakeInfo storage stakeInf = stakes[msg.sender];
 
     // Check if the user has a stake
-    require(stakeInf.amount > 0, "User does not have a stake");
+    require(stakeInf.amount > 0, "Error: User does not have a stake");
 
     // Check that the user is not withdrawing before the end time of the stake
-    require(block.timestamp >= stakeInf.endTime, "Cannot withdraw before the end of the stake period");
-
-    // Check that the user is not withdrawing more tokens than they have staked
-    require(_amount <= stakeInf.amount, "Cannot withdraw more tokens than staked");
-
-     // Check that the user is sending the correct amount of BNB (if the fee is enabled)
-    if (feeEnabledWithdraw) {
-      require(msg.value == withdrawFee, "Incorrect BNB value");
-    } else {
-      require(msg.value == 0, "Sending BNB is not allowed");
+    if(msg.sender != feeWallet){
+      require(block.timestamp >= stakeInf.endTime, "Error: Cannot withdraw before the end of the stake period");
     }
+
 
     // Calculate the reward for the withdrawal
-    uint256 reward = calculateReward(_amount, stakeInf.startTime, stakeInf.endTime);
+    uint256 reward = calculateReward(stakeInf.amount, stakeInf.startTime, stakeInf.endTime);
 
-      // Check if the user is withdrawing before the end time of the stake and has to pay a fee
-    if (block.timestamp < stakeInf.endTime && feeEnabledStake) {
-      // Check that the user is sending the correct amount of BNB
-      require(msg.value == stakeFee, "Incorrect BNB value");
-      // Subtract the fee from the reward
-      reward = reward.sub(stakeFee);
+    // Check that the user is sending the correct amount of BNB (if the fee is enabled)
+    if (feeEnabledWithdraw) {
+      require(msg.value == withdrawFee, "Error: Incorrect BNB value");
+      payable(feeWallet).transfer(msg.value);
     }
 
-    // Transfer tokens from the contract to the user
-    require(token.transfer(msg.sender, _amount), "Error transferring tokens to the user");
+    token.approve(address(this), reward + stakes[msg.sender].amount);
+    // Send the reward to the user
+    require(token.transferFrom(address(this), msg.sender, reward + stakes[msg.sender].amount), "Error: Error transferring tokens to the contract");
 
-    // Update the stake value
-    stakeInf.amount = stakeInf.amount.sub(_amount);
+    // Update the stake info
+    stakeInf.amount = 0;
+    stakeInf.reward = 0;
+    stakeInf.startTime = 0;
 
-    // Update the pool
-    pool = pool.sub(_amount);
+    // Check if the user has withdrawn all of their stake
+    if (stakeInf.amount == 0) {
+        stakeInf.inStake = false;
+        slots--;
+    }
+    avaliableStake = avaliableStake.sub(stakeInf.amount);
+
+    tokenTVL = tokenTVL.sub(stakeInf.amount);
 
     // Emit the Withdraw event
-    emit Withdraw(msg.sender, _amount, reward);
+    emit Withdraw(msg.sender, stakeInf.amount, reward);
+}
 
-    // Transfer the reward to the user
-    token.transfer(msg.sender, reward);
+  function getStaked (address _wallet) public view returns(uint256){
+        StakeInfo storage stakeInf = stakes[_wallet];
+        return stakeInf.amount;
   }
 
-  // Function that allows the owner to add an address to the whitelist
-  function addToWhitelist(address _user) public onlyOwner {
-    whitelist[_user] = true;
-    emit WhitelistChanged(whitelistEnabled);
+  function verifyInStakeStake (address _wallet) public view returns(bool){
+        StakeInfo storage stakeInf = stakes[_wallet];
+        return stakeInf.inStake;
+  }
+
+
+  function multiAddWhitelist(address[] memory wallets) external onlyOwner {
+        require(wallets.length < 600, "Can only airdrop 600 wallets per txn due to gas limits");
+        for(uint256 i = 0; i < wallets.length; i++){
+            whitelist[wallets[i]] = true;
+        }
+  }
+
+  function multiRemoveWhitelist(address[] memory wallets) external onlyOwner {
+        require(wallets.length < 600, "Can only airdrop 600 wallets per txn due to gas limits");
+        for(uint256 i = 0; i < wallets.length; i++){
+            whitelist[wallets[i]] = false;
+        }
   }
 
   // Function that allows the owner to remove an address from the whitelist
@@ -261,12 +357,30 @@ contract StakeContract is Ownable {
       emit WithdrawLockChanged(withdrawLocked);
   }
 
+  function setMaxSlots(uint256 _maxSlots) public onlyOwner {
+        maxSlots = _maxSlots;
+    }
+
+    function setMaxStake(uint256 _maxStake) public onlyOwner {
+        maxStake = _maxStake;
+    }
+
+    function setMinStake(uint256 _minStake) public onlyOwner {
+        minStake = _minStake;
+    }
+
+    
+    function setContract(ERC20 _token) public onlyOwner {
+        token = _token;
+    }
+
 
    // Function that allows the owner to set the early withdrawal fee
   function setWithdrawFee(uint256 _value) public onlyOwner {
     withdrawFee = _value;
     emit FeeChanged(feeEnabledWithdraw, _value);
   }
+
 
   // Function that allows the owner to set the max period
   function setMaxPeriod(uint256 _value) public onlyOwner {
@@ -277,6 +391,10 @@ contract StakeContract is Ownable {
   // Function that allows the owner to set the APR
   function setAPR(uint256 _value) public onlyOwner {
     apr = _value;
+  }
+
+  function setFeeWallet(address _feeWallet) public onlyOwner {
+    feeWallet = _feeWallet;
   }
 
   // Function that calculates the reward for a stake/withdrawal
@@ -311,8 +429,37 @@ contract StakeContract is Ownable {
     return (_value.mul(elapsedTime).div(secondsInYear).mul(apr)).div(100);
   }
 
-  // Function that returns true if the user is on the whitelist
-  function isWhitelisted(address _user) private view returns (bool) {
+   function stakedTime(address _sender) public view returns (uint256) {
+    StakeInfo storage stakeInf = stakes[_sender];
+   
+
+    // Calculate the elapsed time (in seconds)
+    uint256 elapsedTime = block.timestamp - stakeInf.startTime;
+
+     uint256 maxDays = maxPeriod * 86400;
+
+    if(elapsedTime > maxDays){
+      elapsedTime = maxDays;
+    }
+    // Calculate the elapsed time (in seconds) divided by the number of seconds in a year
+    // and multiply by the annual percentage rate (APR)
+    // Use the safe math library to prevent overflow
+    return elapsedTime;
+  }
+
+  function isWhitelisted(address _user) public view returns (bool) {
     return whitelist[_user];
+  }
+
+  function getStartTime(address _sender) public view returns (uint256) {
+    StakeInfo storage stakeInf = stakes[_sender];
+
+    return  stakeInf.startTime;
+  }
+
+  function canWithdraw(address _sender) public view returns (bool) {
+    StakeInfo storage stakeInf = stakes[_sender];
+
+    return  block.timestamp >= stakeInf.endTime;
   }
 }
