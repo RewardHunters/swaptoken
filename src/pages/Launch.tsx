@@ -53,18 +53,18 @@ export default function Launch() {
   const [stakeContract, setStakeContract] = useState("0xdDd9D9155582ABbCe018E831bf3e8D8f50ac382f");
   const [currentMonth, setcurrentMonth] = useState("30");
 
-  const tokenBUSD = "0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee"; // 0xe9e7cea3dedca5984780bafc599bd69add087d56 Mainnet BUSD //Testnet: 0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee
-  const tokenAddress = "0xb16b19872a83C11B49beCa7A02e156f49De0A9D2";
+  const tokenBUSD = "0xe9e7cea3dedca5984780bafc599bd69add087d56"; // 0xe9e7cea3dedca5984780bafc599bd69add087d56 Mainnet BUSD //Testnet: 0xeD24FC36d5Ee211Ea25A80239Fb8C4Cfd80f12Ee
+  const tokenAddress = "0x11cE2eAd2bC93E37cD02F9429C2D639e30C8cAdf";
 
   const [stakeContractInfo, setstakeContractInfo] = useState([
     {
-      address: "0x525d7707540d17371d06811e05eDD4598BfAF032",
+      address: "0x518cD47Fd434F72E557E7A0BDb5eEbf13AA0077A",
       type: "Stake Simple",
       days: "30",
       period: "1 month"
     },
     {
-      address: "0x525d7707540d17371d06811e05eDD4598BfAF032",
+      address: "0xAfeFe62acef633a8B59F5D3974eC9b290b2a2867",
       type: "Stake Prime",
       days: "30",
       period: "1 month"
@@ -76,37 +76,37 @@ export default function Launch() {
       period: "1 month"
     },
     {
-      address: "0x525d7707540d17371d06811e05eDD4598BfAF032",
+      address: "0xc52C05e846A8f59c23983d9fdCD557E7a1cDFe9F",
       type: "Stake Simple",
       days: "60",
       period: "2 months"
     },
     {
-      address: "0x525d7707540d17371d06811e05eDD4598BfAF032",
+      address: "0xC8a9ACa7110a306E24192EBe90028b8eFC2b5e0a",
       type: "Stake Prime",
       days: "60",
       period: "2 months"
     },
     {
-      address: "0x525d7707540d17371d06811e05eDD4598BfAF032",
+      address: "0x37C61Bac644F12D09b5e3B7398f93963Dd4aDEC4",
       type: "Stake Legacy",
       days: "60",
       period: "2 months"
     },
     {
-      address: "0x525d7707540d17371d06811e05eDD4598BfAF032",
+      address: "0xC3BB01D8231735FFd2362085D4Bc7f1f161263A2",
       type: "Stake Simple",
       days: "90",
       period: "3 months"
     },
     {
-      address: "0x525d7707540d17371d06811e05eDD4598BfAF032",
+      address: "0xF466Eb9C6c44556b5eCc2eaF9Fe8Ef9E53f7E63C",
       type: "Stake Prime",
       days: "90",
       period: "3 months"
     },
     {
-      address: "0x525d7707540d17371d06811e05eDD4598BfAF032",
+      address: "0x50aD9E5fF1cae03afeC900971064d7f8d9F53F7F",
       type: "Stake Legacy",
       days: "90",
       period: "3 months"

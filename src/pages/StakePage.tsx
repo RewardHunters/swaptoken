@@ -40,7 +40,7 @@ export default function StakePage({statusConnect, stakeAddress, type, period}:{s
 
   const [balanceRHT, setBalanceRHT] = useState(0);
 
-  const RHTToken = "0xC315a7E34572A9C3858428187aB10813Ac3420C8";
+  const RHTToken = "0x11cE2eAd2bC93E37cD02F9429C2D639e30C8cAdf";
 
 
   useEffect(() => {
